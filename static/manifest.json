@@ -1,0 +1,10 @@
+{
+	"manifest_version": 3,
+	"name": "Trim The Hedge Calculator",
+	"version": "0.1.0",
+	"description": "Trim the Hedge Calculator",
+	"action": {
+		"default_title": "Trim the Hedge Calculator",
+		"default_popup": "index.html"
+	}
+}
