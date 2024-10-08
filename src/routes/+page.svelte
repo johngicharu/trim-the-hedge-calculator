@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CopyIcon from '$lib/icons/CopyIcon.svelte';
 	import { writable } from 'svelte/store';
 
 	const keep_amount = writable<number>();
@@ -27,7 +28,7 @@
 	}
 </script>
 
-<main class="bg-slate-100 min-w-96">
+<main class="bg-slate-50 min-w-96">
 	<header
 		class="flex flex-col items-center justify-center w-full px-3 py-3 space-y-2 text-slate-200 bg-slate-800"
 	>
@@ -100,31 +101,84 @@
 				<div class="keep_amount">
 					<div class="font-semibold">Keep Amount:</div>
 					<div class="content">
-						{$keep_amount}
+						<button on:click={() => navigator.clipboard.writeText($keep_amount.toString())}>
+							<div>
+								{$keep_amount}
+							</div>
+							<div>
+								<CopyIcon />
+							</div>
+						</button>
 					</div>
 				</div>
 				<div class="keep_amount">
 					<div class="font-semibold">Apply Amount:</div>
 					<div class="content">
-						{+($profit_amount - $keep_amount).toFixed(2)}
+						<button
+							on:click={() =>
+								navigator.clipboard.writeText(
+									($profit_amount - $keep_amount).toFixed(2).toString()
+								)}
+						>
+							<div>
+								{+($profit_amount - $keep_amount).toFixed(2)}
+							</div>
+							<div>
+								<CopyIcon />
+							</div>
+						</button>
 					</div>
 				</div>
 				<div class="close_partial">
 					<div class="font-semibold">Close Partial:</div>
 					<div class="content">
-						{$close_partial_volume > $loss_volume ? $loss_volume : $close_partial_volume}
+						<button
+							on:click={() =>
+								navigator.clipboard.writeText(
+									($close_partial_volume > $loss_volume
+										? $loss_volume
+										: $close_partial_volume
+									).toString()
+								)}
+						>
+							<div>
+								{$close_partial_volume > $loss_volume ? $loss_volume : $close_partial_volume}
+							</div>
+							<div>
+								<CopyIcon />
+							</div>
+						</button>
 					</div>
 				</div>
 				<div class="close_partial">
 					<div class="font-semibold">Close Percentage:</div>
 					<div class="content">
-						{$close_partial_volume > $loss_volume
-							? 100
-							: +(
-									($close_partial_volume /
-										($loss_volume / ($volume_type === 'UNITS' ? 100000 : 1))) *
-									100
-								).toFixed(2)}%
+						<button
+							on:click={() =>
+								navigator.clipboard.writeText(
+									($close_partial_volume > $loss_volume
+										? 100
+										: +(
+												($close_partial_volume /
+													($loss_volume / ($volume_type === 'UNITS' ? 100000 : 1))) *
+												100
+											).toFixed(2)
+									).toString()
+								)}
+						>
+							<div>
+								{$close_partial_volume > $loss_volume
+									? 100
+									: +(
+											($close_partial_volume /
+												($loss_volume / ($volume_type === 'UNITS' ? 100000 : 1))) *
+											100
+										).toFixed(2)}%
+							</div>
+							<div>
+								<CopyIcon />
+							</div>
+						</button>
 					</div>
 				</div>
 
@@ -132,7 +186,12 @@
 					<div class="remaining_profit">
 						<div class="font-semibold">Apply to Next Trade:</div>
 						<div class="content">
-							{+($profit_amount - ($keep_amount + $loss_amount)).toFixed(2)}
+							<div>
+								{+($profit_amount - ($keep_amount + $loss_amount)).toFixed(2)}
+							</div>
+							<div>
+								<CopyIcon />
+							</div>
 						</div>
 					</div>
 				{/if}
@@ -154,7 +213,7 @@
 		}
 
 		.section.winning {
-			@apply bg-green-50;
+			@apply bg-blue-50;
 		}
 
 		.section.losing {
@@ -188,6 +247,10 @@
 
 			.content {
 				@apply text-cyan-400;
+
+				button {
+					@apply flex items-center justify-end space-x-2;
+				}
 			}
 		}
 	}
