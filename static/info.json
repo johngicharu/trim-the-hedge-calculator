@@ -1,0 +1,15 @@
+{
+	"name": {
+		"en-US": "Trim The Hedge Calculator"
+	},
+	"summary": {
+		"en-US": "This calculator helps you determine what volume to close from a losing trade with the profits of a winning trade."
+	},
+	"categories": ["other"],
+	"version": {
+		"license": "MPL-2.0",
+		"approval_notes": "The extension is a calculator that would be useful to traders who hedge."
+	},
+	"contributions_url": "https://ko-fi.com/gicharu",
+	"default_locale": "en-US"
+}

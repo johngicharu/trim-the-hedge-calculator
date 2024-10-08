@@ -1,5 +1,6 @@
 <script lang="ts">
 	import CopyIcon from '$lib/icons/CopyIcon.svelte';
+	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 
 	const keep_amount = writable<number>();
@@ -11,6 +12,15 @@
 	const loss_amount = writable<number>();
 	const profit_amount = writable<number>();
 	const profit_volume = writable<number>();
+
+	$: info = '';
+
+	onMount(() => {
+		// @ts-ignore
+		storage.local.set('trim_the_hedge_calculator_data', { pipValue: 7.7 });
+		// @ts-ignore
+		info = storage.local.get('trim_the_hedge_calculator_data');
+	});
 
 	$: if ($keep_pips && $profit_amount && $loss_amount && $loss_volume && $profit_volume) {
 		const amount_to_keep =
@@ -43,6 +53,7 @@
 		</h1>
 	</header>
 
+	{info}
 	<section class="w-full calculator">
 		<div class="section">
 			<div class="input_group">
