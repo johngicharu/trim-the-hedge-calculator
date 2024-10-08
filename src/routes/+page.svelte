@@ -27,7 +27,7 @@
 	}
 </script>
 
-<main class="bg-slate-100">
+<main class="bg-slate-100 min-w-96">
 	<header
 		class="flex flex-col items-center justify-center w-full px-3 py-3 space-y-2 text-slate-200 bg-slate-800"
 	>
@@ -42,43 +42,57 @@
 		</h1>
 	</header>
 
-	<section class="calculator">
-		<div class="input_wrapper">
-			<label for="keep_pips">Keep Pips</label>
-			<input type="number" name="keep_pips" id="keep_pips" bind:value={$keep_pips} />
+	<section class="w-full calculator">
+		<div class="section">
+			<div class="input_group">
+				<div class="input_wrapper">
+					<label for="pip_value">Pip Value</label>
+					<input type="number" name="pip_value" id="pip_value" bind:value={$pip_value} />
+				</div>
+
+				<div class="input_wrapper">
+					<label for="volume">Volume Type</label>
+					<select name="volume" id="volume" bind:value={$volume_type}>
+						<option value="LOTS">LOTS</option>
+						<option value="UNITS">UNITS</option>
+					</select>
+				</div>
+			</div>
 		</div>
 
-		<div class="input_wrapper">
-			<label for="pip_value">Pip Value in Account Currency</label>
-			<input type="number" name="pip_value" id="pip_value" bind:value={$pip_value} />
+		<div class="section winning">
+			<div class="group_label">Winning Trade</div>
+			<div class="input_group">
+				<div class="input_wrapper">
+					<label for="keep_pips">Keep Pips</label>
+					<input type="number" name="keep_pips" id="keep_pips" bind:value={$keep_pips} />
+				</div>
+
+				<div class="input_wrapper">
+					<label for="profit">Profit</label>
+					<input type="number" name="profit" id="profit" bind:value={$profit_amount} />
+				</div>
+
+				<div class="input_wrapper">
+					<label for="profit_volume">Volume ({$volume_type.toLowerCase()})</label>
+					<input type="number" name="profit_volume" id="profit" bind:value={$profit_volume} />
+				</div>
+			</div>
 		</div>
 
-		<div class="input_wrapper">
-			<label for="volume">Volume Type</label>
-			<select name="volume" id="volume" bind:value={$volume_type}>
-				<option value="LOTS">LOTS</option>
-				<option value="UNITS">UNITS</option>
-			</select>
-		</div>
+		<div class="section losing">
+			<div class="group_label">Losing Trade</div>
+			<div class="input_group">
+				<div class="input_wrapper">
+					<label for="loss">Loss</label>
+					<input type="number" name="loss" id="loss" bind:value={$loss_amount} />
+				</div>
 
-		<div class="input_wrapper">
-			<label for="profit">Profit</label>
-			<input type="number" name="profit" id="profit" bind:value={$profit_amount} />
-		</div>
-
-		<div class="input_wrapper">
-			<label for="profit_volume">Profit Volume ({$volume_type.toLowerCase()})</label>
-			<input type="number" name="profit_volume" id="profit" bind:value={$profit_volume} />
-		</div>
-
-		<div class="input_wrapper">
-			<label for="loss">Loss</label>
-			<input type="number" name="loss" id="loss" bind:value={$loss_amount} />
-		</div>
-
-		<div class="input_wrapper">
-			<label for="loss_volume">Loss Volume ({$volume_type.toLowerCase()})</label>
-			<input type="number" name="loss_volume" id="loss_volume" bind:value={$loss_volume} />
+				<div class="input_wrapper">
+					<label for="loss_volume">Volume ({$volume_type.toLowerCase()})</label>
+					<input type="number" name="loss_volume" id="loss_volume" bind:value={$loss_volume} />
+				</div>
+			</div>
 		</div>
 
 		{#if $keep_pips && $profit_amount && $loss_amount && $loss_volume && $profit_volume}
@@ -131,19 +145,37 @@
 	.calculator {
 		@apply border w-full;
 
+		.section {
+			@apply px-3 w-full flex flex-col items-start justify-start py-2;
+		}
+
+		.group_label {
+			@apply font-semibold text-sm pt-2;
+		}
+
+		.section.winning {
+			@apply bg-green-50;
+		}
+
+		.section.losing {
+			@apply bg-red-50;
+		}
+
+		.input_group {
+			@apply flex items-start justify-between space-x-2 -mt-2;
+		}
+
 		.input_wrapper {
-			@apply flex items-start justify-start flex-col w-full py-3 px-5;
+			@apply flex items-start justify-start flex-col w-full py-3;
 
 			label {
-				@apply font-semibold;
+				@apply font-semibold pb-1;
 			}
 
-			input {
-				@apply px-3 border py-1 w-full bg-gray-200;
-			}
-
+			input,
 			select {
-				@apply w-full px-3 py-2 bg-gray-200;
+				@apply px-3 border py-1 w-full;
+				@apply w-full h-9 border-slate-300;
 			}
 		}
 
