@@ -5,6 +5,10 @@
 	"description": "Trim the Hedge Calculator",
 	"action": {
 		"default_title": "Trim the Hedge Calculator",
+		"default_popup": "index.html",
+		"default_icon": "ssfx.png"
+	},
+	"browser_action": {
 		"default_popup": "index.html"
 	}
 }

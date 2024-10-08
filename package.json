@@ -4,7 +4,7 @@
 	"private": true,
 	"scripts": {
 		"dev": "vite dev",
-		"build": "vite build",
+		"build": "vite build && node ./removeInlineScript.cjs",
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
@@ -35,6 +35,7 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"sveltekit-adapter-chrome-extension": "^2.0.1"
+		"sveltekit-adapter-chrome-extension": "^2.0.1",
+		"tiny-glob": "^0.2.9"
 	}
 }
