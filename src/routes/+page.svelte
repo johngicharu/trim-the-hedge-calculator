@@ -1,44 +1,134 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
+	import ClosingTrades from '$lib/comps/ClosingTrades.svelte';
+	import LosingTrade from '$lib/comps/LosingTrade.svelte';
+	import ProfitableTrade from '$lib/comps/ProfitableTrade.svelte';
 	import CopyIcon from '$lib/icons/CopyIcon.svelte';
+	import { app_data, closed_results } from '$lib/stores';
 	import { onMount } from 'svelte';
-	import { writable } from 'svelte/store';
 
-	const keep_amount = writable<number>();
-	const keep_pips = writable<number>();
-	const pip_value = writable<number>(10);
-	const volume_type = writable<'UNITS' | 'LOTS'>('LOTS');
-	const close_partial_volume = writable<number>();
-	const loss_volume = writable<number>();
-	const loss_amount = writable<number>();
-	const profit_amount = writable<number>();
-	const profit_volume = writable<number>();
+	function getBrowserInstance(): typeof chrome | null {
+		// Get extension api Chrome or Firefox
+		const browserInstance = browser && (window.chrome || (window as any)['browser']);
+		return browserInstance || null;
+	}
 
-	$: info = '';
+	async function saveAppData() {
+		const instance = getBrowserInstance();
+		instance &&
+			(await instance.storage.local.set({
+				trim_the_hedge_calculator_data: $app_data
+			}));
+	}
+
+	async function getAppData() {
+		const instance = getBrowserInstance();
+
+		if (instance) {
+			const info = (await instance.storage.local.get()).trim_the_hedge_calculator_data;
+			if (!info) {
+				await saveAppData();
+			} else {
+				$app_data = info;
+			}
+		}
+	}
 
 	onMount(() => {
-		// @ts-ignore
-		storage.local.set('trim_the_hedge_calculator_data', { pipValue: 7.7 });
-		// @ts-ignore
-		info = storage.local.get('trim_the_hedge_calculator_data');
+		getAppData();
+
+		return async () => {
+			await saveAppData();
+		};
 	});
 
-	$: if ($keep_pips && $profit_amount && $loss_amount && $loss_volume && $profit_volume) {
-		const amount_to_keep =
-			($profit_volume / ($volume_type === 'UNITS' ? 100000 : 1)) * $pip_value * $keep_pips;
+	app_data.subscribe((data) => {
+		const amount_to_keep = data.profitTrades
+			.filter((t) => t.keepPips >= 0 && t.profitAmount >= 0 && t.profitVolume >= 0)
+			.map(
+				(t) =>
+					(t.profitVolume / (data.volumeType === 'UNITS' ? 100000 : 1)) * data.pipValue * t.keepPips
+			)
+			.reduce((a, b) => a + b);
 
-		keep_amount.set(Math.floor(amount_to_keep * 100) / 100);
-		const apply = $profit_amount - amount_to_keep;
-		close_partial_volume.set(
-			Math.floor(
-				(apply / Math.abs($loss_amount)) *
-					($loss_volume / ($volume_type === 'UNITS' ? 100000 : 1)) *
-					100
-			) / 100
-		);
-	}
+		const total_profit = data.profitTrades
+			.filter((t) => t.keepPips >= 0 && t.profitAmount >= 0 && t.profitVolume >= 0)
+			.map((t) => t.profitAmount)
+			.reduce((a, b) => a + b);
+
+		let remaining_amount = total_profit - amount_to_keep;
+		const losingTrades = data.lossTrades
+			.filter((t) => !Object.is(Number(t.lossAmount), NaN) && t.lossVolume)
+			.map((t) => ({
+				...t,
+				lossAmount: Math.abs(t.lossAmount),
+				lossVolume: Math.abs(t.lossVolume)
+			}))
+			.sort((a, b) => b.lossAmount - a.lossAmount);
+
+		const closedTrades: { lossAmount: number; lossVolume: number; closeVolume: number }[] = [];
+
+		let was_edited = false;
+
+		while (remaining_amount > 0) {
+			// Close an additional losing trade
+			// Check each trade and close them based on whether they can be fully closed or not, we can first implement a one trade policy though where we only close one trade of the traders' chosing
+			const tradeToTrim = losingTrades[0];
+
+			if (
+				!tradeToTrim ||
+				Object.is(Math.abs(tradeToTrim.lossAmount), NaN) ||
+				Object.is(Math.abs(tradeToTrim.lossVolume), NaN) ||
+				Object.is(Number(tradeToTrim.lossAmount), NaN) ||
+				Object.is(Number(tradeToTrim.lossVolume), NaN)
+			) {
+				break;
+			}
+
+			was_edited = true;
+			if (tradeToTrim.lossAmount < remaining_amount) {
+				closedTrades.push({ ...tradeToTrim, closeVolume: tradeToTrim.lossVolume });
+				remaining_amount -= tradeToTrim.lossAmount;
+				losingTrades.shift();
+			} else {
+				// Trim this position only
+				const close_partial_lots =
+					Math.floor(
+						(remaining_amount / Math.abs(tradeToTrim.lossAmount)) *
+							(tradeToTrim.lossVolume / (data.volumeType === 'UNITS' ? 100000 : 1)) *
+							100
+					) / 100;
+				closedTrades.push({
+					...tradeToTrim,
+					closeVolume: close_partial_lots * (data.volumeType === 'UNITS' ? 100000 : 1)
+				});
+				remaining_amount -= remaining_amount;
+			}
+		}
+
+		if (was_edited) {
+			const closedResults = {
+				applyAmount: total_profit - amount_to_keep,
+				closePercentage:
+					closedTrades.length && data.lossTrades.length
+						? closedTrades.map((t) => t.closeVolume).reduce((a, b) => a + b) /
+							data.lossTrades
+								.filter((t) => !Object.is(Number(t.lossAmount), NaN) && t.lossVolume >= 0)
+								.map((t) => t.lossVolume)
+								.reduce((a, b) => a + b)
+						: 0,
+				keepAmount: amount_to_keep,
+				losingTradesToClose: closedTrades
+			};
+
+			closed_results.set(closedResults);
+		}
+
+		saveAppData();
+	});
 </script>
 
-<main class="bg-slate-50 min-w-96">
+<main class="w-full h-full bg-slate-50">
 	<header
 		class="flex flex-col items-center justify-center w-full px-3 py-3 space-y-2 text-slate-200 bg-slate-800"
 	>
@@ -53,18 +143,17 @@
 		</h1>
 	</header>
 
-	{info}
 	<section class="w-full calculator">
 		<div class="section">
 			<div class="input_group">
 				<div class="input_wrapper">
 					<label for="pip_value">Pip Value</label>
-					<input type="number" name="pip_value" id="pip_value" bind:value={$pip_value} />
+					<input type="number" name="pip_value" id="pip_value" bind:value={$app_data.pipValue} />
 				</div>
 
 				<div class="input_wrapper">
 					<label for="volume">Volume Type</label>
-					<select name="volume" id="volume" bind:value={$volume_type}>
+					<select name="volume" id="volume" bind:value={$app_data.volumeType}>
 						<option value="LOTS">LOTS</option>
 						<option value="UNITS">UNITS</option>
 					</select>
@@ -72,128 +161,81 @@
 			</div>
 		</div>
 
-		<div class="section winning">
-			<div class="group_label">Winning Trade</div>
-			<div class="input_group">
-				<div class="input_wrapper">
-					<label for="keep_pips">Keep Pips</label>
-					<input type="number" name="keep_pips" id="keep_pips" bind:value={$keep_pips} />
-				</div>
+		<!-- Profitable Trades -->
+		{#each $app_data.profitTrades.filter((_, i) => i !== $app_data.activeProfitableTradeIndex) as p, p_index}
+			<button>
+				{p_index + 1}
+			</button>
+		{/each}
 
-				<div class="input_wrapper">
-					<label for="profit">Profit</label>
-					<input type="number" name="profit" id="profit" bind:value={$profit_amount} />
-				</div>
+		{#if $app_data.profitTrades.length && $app_data.profitTrades[$app_data.activeProfitableTradeIndex]}
+			<ProfitableTrade profit_trade_index={$app_data.activeProfitableTradeIndex} />
+		{/if}
 
-				<div class="input_wrapper">
-					<label for="profit_volume">Volume ({$volume_type.toLowerCase()})</label>
-					<input type="number" name="profit_volume" id="profit" bind:value={$profit_volume} />
+		<!-- Losing Trades -->
+		{#each $app_data.lossTrades.filter((_, i) => i !== $app_data.activeLosingTradeIndex) as p, p_index}
+			<button>
+				{p_index + 1}
+			</button>
+		{/each}
+
+		{#if $app_data.lossTrades.length && $app_data.lossTrades[$app_data.activeLosingTradeIndex]}
+			<LosingTrade loss_trade_index={$app_data.activeLosingTradeIndex} />
+		{/if}
+
+		<div class="py-4 summary_section text-slate-200 bg-slate-800">
+			<div class="keep_amount">
+				<div class="font-semibold">Keep Amount:</div>
+				<div class="content">
+					<button
+						on:click={() =>
+							navigator.clipboard.writeText(
+								(+($closed_results.keepAmount || 0).toFixed(2)).toString()
+							)}
+					>
+						<div>
+							{+($closed_results.keepAmount || 0).toFixed(2)}
+						</div>
+						<div>
+							<CopyIcon />
+						</div>
+					</button>
 				</div>
 			</div>
-		</div>
-
-		<div class="section losing">
-			<div class="group_label">Losing Trade</div>
-			<div class="input_group">
-				<div class="input_wrapper">
-					<label for="loss">Loss</label>
-					<input type="number" name="loss" id="loss" bind:value={$loss_amount} />
-				</div>
-
-				<div class="input_wrapper">
-					<label for="loss_volume">Volume ({$volume_type.toLowerCase()})</label>
-					<input type="number" name="loss_volume" id="loss_volume" bind:value={$loss_volume} />
+			<div class="keep_amount">
+				<div class="font-semibold">Apply Amount:</div>
+				<div class="content">
+					<button
+						on:click={() =>
+							navigator.clipboard.writeText(
+								(+($closed_results.applyAmount || 0).toFixed(2)).toString()
+							)}
+					>
+						<div>
+							{+($closed_results.applyAmount || 0).toFixed(2)}
+						</div>
+						<div>
+							<CopyIcon />
+						</div>
+					</button>
 				</div>
 			</div>
-		</div>
 
-		{#if $keep_pips && $profit_amount && $loss_amount && $loss_volume && $profit_volume}
-			<div class="py-4 summary_section text-slate-200 bg-slate-800">
-				<div class="keep_amount">
-					<div class="font-semibold">Keep Amount:</div>
-					<div class="content">
-						<button on:click={() => navigator.clipboard.writeText($keep_amount.toString())}>
-							<div>
-								{$keep_amount}
-							</div>
-							<div>
-								<CopyIcon />
-							</div>
-						</button>
-					</div>
+			<div class="close_partial">
+				<div class="font-semibold">Close Percentage:</div>
+				<div class="content">
+					<button>
+						<div>
+							{+($closed_results.closePercentage * 100).toFixed(2)}%
+						</div>
+					</button>
 				</div>
-				<div class="keep_amount">
-					<div class="font-semibold">Apply Amount:</div>
-					<div class="content">
-						<button
-							on:click={() =>
-								navigator.clipboard.writeText(
-									($profit_amount - $keep_amount).toFixed(2).toString()
-								)}
-						>
-							<div>
-								{+($profit_amount - $keep_amount).toFixed(2)}
-							</div>
-							<div>
-								<CopyIcon />
-							</div>
-						</button>
-					</div>
-				</div>
-				<div class="close_partial">
-					<div class="font-semibold">Close Partial:</div>
-					<div class="content">
-						<button
-							on:click={() =>
-								navigator.clipboard.writeText(
-									($close_partial_volume > $loss_volume
-										? $loss_volume
-										: $close_partial_volume
-									).toString()
-								)}
-						>
-							<div>
-								{$close_partial_volume > $loss_volume ? $loss_volume : $close_partial_volume}
-							</div>
-							<div>
-								<CopyIcon />
-							</div>
-						</button>
-					</div>
-				</div>
-				<div class="close_partial">
-					<div class="font-semibold">Close Percentage:</div>
-					<div class="content">
-						<button
-							on:click={() =>
-								navigator.clipboard.writeText(
-									($close_partial_volume > $loss_volume
-										? 100
-										: +(
-												($close_partial_volume /
-													($loss_volume / ($volume_type === 'UNITS' ? 100000 : 1))) *
-												100
-											).toFixed(2)
-									).toString()
-								)}
-						>
-							<div>
-								{$close_partial_volume > $loss_volume
-									? 100
-									: +(
-											($close_partial_volume /
-												($loss_volume / ($volume_type === 'UNITS' ? 100000 : 1))) *
-											100
-										).toFixed(2)}%
-							</div>
-							<div>
-								<CopyIcon />
-							</div>
-						</button>
-					</div>
-				</div>
+			</div>
 
-				{#if $close_partial_volume > $loss_volume}
+			<!-- Close Summary -->
+			<ClosingTrades trade_to_close={$closed_results.losingTradesToClose} />
+
+			<!-- {#if $close_partial_volume > $loss_volume}
 					<div class="remaining_profit">
 						<div class="font-semibold">Apply to Next Trade:</div>
 						<div class="content">
@@ -205,9 +247,8 @@
 							</div>
 						</div>
 					</div>
-				{/if}
-			</div>
-		{/if}
+				{/if} -->
+		</div>
 	</section>
 </main>
 
@@ -217,18 +258,6 @@
 
 		.section {
 			@apply px-3 w-full flex flex-col items-start justify-start py-2;
-		}
-
-		.group_label {
-			@apply font-semibold text-sm pt-2;
-		}
-
-		.section.winning {
-			@apply bg-blue-50;
-		}
-
-		.section.losing {
-			@apply bg-red-50;
 		}
 
 		.input_group {
