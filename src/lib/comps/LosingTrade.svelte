@@ -72,7 +72,7 @@
 	}
 
 	.input_group {
-		@apply flex items-start justify-between space-x-2 -mt-2;
+		@apply flex items-start justify-between space-x-2 -mt-2 w-full;
 	}
 
 	.input_wrapper {

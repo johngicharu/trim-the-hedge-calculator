@@ -36,3 +36,11 @@ pnpm run build
 You can preview the production build with `pnpm run preview`.
 
 > To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+
+## TODOS
+
+- [x] Create base version of the calculator that accepts one trade
+- [ ] Allow more profitable and losing trades to be added
+- [ ] Allow input of expressions i.e. `=0.5*12*10` in addition to amounts to improve UX
+- [ ] Allow tracking of profits, losses, and drawdowns kind of similar to when one is backtesting by saving trade entries
+- [ ] Allow inputting pips as opposed to profit/loss amounts to simplify calculations

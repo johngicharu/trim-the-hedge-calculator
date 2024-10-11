@@ -36,6 +36,7 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"simplebar": "^6.2.7",
 		"sveltekit-adapter-chrome-extension": "^2.0.1",
 		"tiny-glob": "^0.2.9"
 	}

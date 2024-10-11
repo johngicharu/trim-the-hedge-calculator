@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+* {
+  box-sizing: border-box;
+}
+
 html, body {
-  @apply min-w-[400px] max-w-[400px] min-h-[638px] max-h-[700px] overflow-x-hidden overflow-y-scroll;
+  @apply min-w-[400px] w-[400px] h-[668px] max-w-[400px] min-h-[668px] max-h-[668px] overflow-hidden;
 }

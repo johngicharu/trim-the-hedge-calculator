@@ -143,7 +143,7 @@
 		</h1>
 	</header>
 
-	<section class="w-full calculator">
+	<section class="w-full calculator h-[556px]" data-simplebar>
 		<div class="section">
 			<div class="input_group">
 				<div class="input_wrapper">
@@ -183,7 +183,7 @@
 			<LosingTrade loss_trade_index={$app_data.activeLosingTradeIndex} />
 		{/if}
 
-		<div class="py-4 summary_section text-slate-200 bg-slate-800">
+		<div class="py-4 summary_section text-slate-200 bg-slate-800 min-h-[220px]">
 			<div class="keep_amount">
 				<div class="font-semibold">Keep Amount:</div>
 				<div class="content">
@@ -248,6 +248,7 @@
 						</div>
 					</div>
 				{/if} -->
+			<div class="w-full h-10 spacer"></div>
 		</div>
 	</section>
 </main>
@@ -261,7 +262,7 @@
 		}
 
 		.input_group {
-			@apply flex items-start justify-between space-x-2 -mt-2;
+			@apply flex items-start justify-between space-x-2 -mt-2 w-full;
 		}
 
 		.input_wrapper {
