@@ -5,7 +5,7 @@ export const MAX_TRADES = 10;
 
 // place files you want to import through the `$lib` alias in this folder.
 export type IProfitItem = {
-	keepPips: number;
+	keep: number;
 	profitAmount: number;
 	profitVolume: number;
 	index: number;
@@ -20,6 +20,7 @@ export type ILossItem = {
 export type IAppData = {
 	pipValue: number;
 	volumeType: 'UNITS' | 'LOTS';
+	mode: 'MONEY' | 'PIPS';
 	activeProfitableTrade: IProfitItem;
 	activeLosingTrade: ILossItem;
 	profitTrades: IProfitItem[];
@@ -39,7 +40,7 @@ export async function addProfitableTrade() {
 	console.log('Add Profitable Trade');
 	app_data.update((d) => {
 		const newItem = {
-			keepPips: d.profitTrades[d.profitTrades.length - 1]?.keepPips || 10,
+			keep: d.profitTrades[d.profitTrades.length - 1]?.keep || 10,
 			profitAmount: 0,
 			profitVolume: 0,
 			index: d.profitTrades.length

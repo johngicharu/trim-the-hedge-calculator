@@ -85,7 +85,7 @@
 	</div>
 	<div class="input_group">
 		<div class="input_wrapper">
-			<label for="loss">Loss</label>
+			<label for="loss">Loss ({$app_data.mode === 'MONEY' ? '$' : 'Pips'})</label>
 			<input type="number" name="loss" id="loss" bind:value={lossItem.lossAmount} />
 		</div>
 

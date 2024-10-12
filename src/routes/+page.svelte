@@ -51,24 +51,27 @@
 
 	app_data.subscribe((data) => {
 		const amount_to_keep = data.profitTrades
-			.filter((t) => t.keepPips >= 0 && t.profitAmount >= 0 && t.profitVolume >= 0)
+			.filter((t) => t.keep >= 0 && t.profitAmount >= 0 && t.profitVolume >= 0)
 			.map(
 				(t) =>
-					(t.profitVolume / (data.volumeType === 'UNITS' ? 100000 : 1)) * data.pipValue * t.keepPips
+					(t.profitVolume / (data.volumeType === 'UNITS' ? 100000 : 1)) *
+					(data.mode === 'MONEY' ? data.pipValue : 1) *
+					t.keep
 			)
 			.reduce((a, b) => a + b);
 
 		const total_profit = data.profitTrades
-			.filter((t) => t.keepPips >= 0 && t.profitAmount >= 0 && t.profitVolume >= 0)
-			.map((t) => t.profitAmount)
+			.filter((t) => t.keep >= 0 && t.profitAmount >= 0 && t.profitVolume >= 0)
+			.map((t) => (data.mode === 'MONEY' ? t.profitAmount : t.profitAmount * t.profitVolume))
 			.reduce((a, b) => a + b);
 
-		let remaining_amount = total_profit - amount_to_keep;
+		let remaining_amount = total_profit - amount_to_keep; // Can be pips or pips * volume
+
 		const losingTrades = data.lossTrades
 			.filter((t) => isNumber(t.lossAmount) && isNumber(t.lossVolume))
 			.map((t) => ({
 				...t,
-				lossAmount: Math.abs(t.lossAmount),
+				lossAmount: Math.abs(data.mode === 'MONEY' ? t.lossAmount : t.lossAmount * t.lossVolume),
 				lossVolume: Math.abs(t.lossVolume)
 			}))
 			.sort((a, b) => b.lossAmount - a.lossAmount);
@@ -126,7 +129,10 @@
 								.reduce((a, b) => a + b)
 						: 0,
 				keepAmount: amount_to_keep,
-				losingTradesToClose: closedTrades
+				losingTradesToClose:
+					data.mode === 'MONEY'
+						? closedTrades
+						: closedTrades.map((t) => ({ ...t, lossAmount: t.lossAmount / t.lossVolume }))
 			};
 
 			closed_results.set(closedResults);
@@ -157,9 +163,19 @@
 		<div class="section">
 			<div class="input_group">
 				<div class="input_wrapper">
-					<label for="pip_value">Pip Value</label>
-					<input type="number" name="pip_value" id="pip_value" bind:value={$app_data.pipValue} />
+					<label for="mode">Mode</label>
+					<select name="mode" id="mode" bind:value={$app_data.mode}>
+						<option value="MONEY">MONEY</option>
+						<option value="PIPS">PIPS</option>
+					</select>
 				</div>
+
+				{#if $app_data.mode === 'MONEY'}
+					<div class="input_wrapper">
+						<label for="pip_value">Pip Value</label>
+						<input type="number" name="pip_value" id="pip_value" bind:value={$app_data.pipValue} />
+					</div>
+				{/if}
 
 				<div class="input_wrapper">
 					<label for="volume">Volume Type</label>
@@ -176,7 +192,7 @@
 
 		<div class="py-4 summary_section text-slate-200 bg-slate-800 min-h-[220px]">
 			<div class="keep_amount">
-				<div class="font-semibold">Keep Amount:</div>
+				<div class="font-semibold">Keep ({$app_data.mode === 'MONEY' ? '$' : 'Pips'}):</div>
 				<div class="content">
 					<button
 						on:click={() =>
@@ -194,7 +210,7 @@
 				</div>
 			</div>
 			<div class="keep_amount">
-				<div class="font-semibold">Apply Amount:</div>
+				<div class="font-semibold">Apply ({$app_data.mode === 'MONEY' ? '$' : 'Pips'}):</div>
 				<div class="content">
 					<button
 						on:click={() =>
@@ -225,20 +241,6 @@
 
 			<!-- Close Summary -->
 			<ClosingTrades trade_to_close={$closed_results.losingTradesToClose} />
-
-			<!-- {#if $close_partial_volume > $loss_volume}
-					<div class="remaining_profit">
-						<div class="font-semibold">Apply to Next Trade:</div>
-						<div class="content">
-							<div>
-								{+($profit_amount - ($keep_amount + $loss_amount)).toFixed(2)}
-							</div>
-							<div>
-								<CopyIcon />
-							</div>
-						</div>
-					</div>
-				{/if} -->
 			<div class="w-full h-10 spacer"></div>
 		</div>
 	</section>

@@ -38,7 +38,8 @@
 								{close_item.lossVolume}
 								{$app_data.volumeType}
 								<span class="italic text-gray-400">
-									(-${close_item.lossAmount} Trade)
+									(-{$app_data.mode === 'MONEY' ? '$' : ''}{close_item.lossAmount}
+									{$app_data.mode === 'MONEY' ? 'Trade ' : 'pip Trade'})
 								</span>
 							</div>
 						</div>

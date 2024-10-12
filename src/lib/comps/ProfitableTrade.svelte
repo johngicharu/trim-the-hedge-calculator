@@ -14,7 +14,7 @@
 	app_data.subscribe((apd) => {
 		if (
 			apd.activeProfitableTrade.index !== profitItem.index ||
-			apd.activeProfitableTrade.keepPips !== profitItem.keepPips ||
+			apd.activeProfitableTrade.keep !== profitItem.keep ||
 			apd.activeProfitableTrade.profitAmount !== profitItem.profitAmount ||
 			apd.activeProfitableTrade.profitVolume !== profitItem.profitVolume
 		) {
@@ -86,12 +86,12 @@
 
 	<div class="input_group">
 		<div class="input_wrapper">
-			<label for="keep_pips">Keep Pips</label>
-			<input type="number" name="keep_pips" id="keep_pips" bind:value={profitItem.keepPips} />
+			<label for="keep_value">Keep ({$app_data.mode === 'MONEY' ? '$' : 'Pips'})</label>
+			<input type="number" name="keep_value" id="keep_value" bind:value={profitItem.keep} />
 		</div>
 
 		<div class="input_wrapper">
-			<label for="profit">Profit</label>
+			<label for="profit">Profit ({$app_data.mode === 'MONEY' ? '$' : 'Pips'})</label>
 			<input type="number" name="profit" id="profit" bind:value={profitItem.profitAmount} />
 		</div>
 
