@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import { addLosingTrade, addProfitableTrade } from '$lib';
+	import { addLosingTrade, addProfitableTrade, isNumber } from '$lib';
 	import ClosingTrades from '$lib/comps/ClosingTrades.svelte';
 	import LosingTrade from '$lib/comps/LosingTrade.svelte';
 	import ProfitableTrade from '$lib/comps/ProfitableTrade.svelte';
@@ -65,7 +65,7 @@
 
 		let remaining_amount = total_profit - amount_to_keep;
 		const losingTrades = data.lossTrades
-			.filter((t) => !Object.is(Number(t.lossAmount), NaN) && t.lossVolume)
+			.filter((t) => isNumber(t.lossAmount) && isNumber(t.lossVolume))
 			.map((t) => ({
 				...t,
 				lossAmount: Math.abs(t.lossAmount),
@@ -82,13 +82,7 @@
 			// Check each trade and close them based on whether they can be fully closed or not, we can first implement a one trade policy though where we only close one trade of the traders' chosing
 			const tradeToTrim = losingTrades[0];
 
-			if (
-				!tradeToTrim ||
-				Object.is(Math.abs(tradeToTrim.lossAmount), NaN) ||
-				Object.is(Math.abs(tradeToTrim.lossVolume), NaN) ||
-				Object.is(Number(tradeToTrim.lossAmount), NaN) ||
-				Object.is(Number(tradeToTrim.lossVolume), NaN)
-			) {
+			if (!tradeToTrim || !isNumber(tradeToTrim.lossAmount) || !isNumber(tradeToTrim.lossVolume)) {
 				break;
 			}
 
@@ -120,7 +114,9 @@
 					closedTrades.length && data.lossTrades.length
 						? closedTrades.map((t) => t.closeVolume).reduce((a, b) => a + b) /
 							data.lossTrades
-								.filter((t) => !Object.is(Number(t.lossAmount), NaN) && t.lossVolume >= 0)
+								.filter(
+									(t) => isNumber(t.lossAmount) && isNumber(t.lossVolume) && t.lossVolume >= 0
+								)
 								.map((t) => t.lossVolume)
 								.reduce((a, b) => a + b)
 						: 0,
