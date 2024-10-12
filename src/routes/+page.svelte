@@ -159,7 +159,11 @@
 		</h1>
 	</header>
 
-	<section class="w-full calculator h-[556px]" data-simplebar>
+	<section
+		class="w-full calculator h-[488px] max-h-[488px]"
+		data-simplebar
+		data-simplebar-auto-hide={false}
+	>
 		<div class="section">
 			<div class="input_group">
 				<div class="input_wrapper">
