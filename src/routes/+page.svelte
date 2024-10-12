@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import { addLosingTrade, addProfitableTrade, isNumber } from '$lib';
+	import { addLosingTrade, addProfitableTrade, isNumber, type IAppData } from '$lib';
 	import ClosingTrades from '$lib/comps/ClosingTrades.svelte';
 	import LosingTrade from '$lib/comps/LosingTrade.svelte';
 	import ProfitableTrade from '$lib/comps/ProfitableTrade.svelte';
@@ -14,23 +14,28 @@
 		return browserInstance || null;
 	}
 
-	async function saveAppData() {
+	async function saveAppData(data: IAppData) {
 		const instance = getBrowserInstance();
-		instance &&
-			(await instance.storage.local.set({
-				trim_the_hedge_calculator_data: $app_data
-			}));
+
+		try {
+			instance &&
+				(await instance.storage.local.set({
+					trim_the_hedge_calculator_data: data
+				}));
+		} catch (error) {
+			console.error(error);
+		}
 	}
 
 	async function getAppData() {
 		const instance = getBrowserInstance();
 
 		if (instance) {
-			const info = (await instance.storage.local.get()).trim_the_hedge_calculator_data;
-			if (!info) {
-				await saveAppData();
-			} else {
+			const info = (await instance.storage.local.get())?.trim_the_hedge_calculator_data;
+
+			if (info) {
 				app_data.set(info);
+
 				if (!info?.profitTrades?.length) {
 					addProfitableTrade();
 				}
@@ -45,7 +50,7 @@
 		getAppData();
 
 		return async () => {
-			await saveAppData();
+			await saveAppData($app_data);
 		};
 	});
 
@@ -140,7 +145,7 @@
 			reset_closed_results();
 		}
 
-		saveAppData();
+		saveAppData(data);
 	});
 </script>
 
@@ -152,7 +157,9 @@
 			<img src="ssfx.jpg" alt="SSFx" class="w-8 h-8 rounded-full" />
 		</div>
 		<h1 class="flex flex-col items-center justify-center h-full whitespace-nowrap">
-			<div class="text-2xl font-semibold heading_text">Trim The Hedge Calculator</div>
+			<div class="text-2xl font-semibold heading_text">
+				Trim The Hedge Calculator {$app_data.mode}
+			</div>
 			<div class="text-xs tagline">
 				made with love <a class="text-cyan-300" href="http://gicharu.com">@gicharu</a>
 			</div>
