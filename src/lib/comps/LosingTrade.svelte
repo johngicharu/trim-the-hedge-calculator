@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { app_data } from '$lib/stores';
-	import { addLosingTrade, deleteItem, type ILossItem } from '$lib';
+	import { addLosingTrade, deleteItem, MAX_TRADES, type ILossItem } from '$lib';
 	import AddIcon from '$lib/icons/AddIcon.svelte';
 	import BackIcon from '$lib/icons/BackIcon.svelte';
 	import DeleteIcon from '$lib/icons/DeleteIcon.svelte';
@@ -23,40 +23,44 @@
 </script>
 
 <div class="section losing">
-	<div class="group_label">
+	<div class="pb-2 group_label">
 		<div class="text">Losing Trade</div>
 
-		<div class="flex items-center justify-center space-x-2 control_btns">
-			{#if lossItem.index >= 1}
-				<button
-					on:click={() => {
-						app_data.update((d) => {
-							const foundItem = d.lossTrades.find((item) => item.index === lossItem.index - 1);
+		<div class="grid grid-cols-5 grid-rows-1 control_btns">
+			<button
+				class:opacity-0={lossItem.index < 1}
+				class:pointer-events-none={lossItem.index < 1}
+				on:click={() => {
+					app_data.update((d) => {
+						const foundItem = d.lossTrades.find((item) => item.index === lossItem.index - 1);
 
-							if (foundItem) d.activeLosingTrade = foundItem;
+						if (foundItem) d.activeLosingTrade = foundItem;
 
-							return d;
-						});
-					}}
-				>
-					<BackIcon />
-				</button>
-			{/if}
+						return d;
+					});
+				}}
+			>
+				<BackIcon />
+			</button>
 
-			{#if $app_data.lossTrades.length > 1}
-				<button on:click={() => deleteItem(lossItem)}>
-					<DeleteIcon />
-				</button>
-			{/if}
+			<button
+				on:click={() => deleteItem(lossItem)}
+				class:opacity-0={$app_data.lossTrades.length < 1}
+				class:pointer-events-none={$app_data.lossTrades.length < 1}
+			>
+				<DeleteIcon />
+			</button>
 
-			{#if $app_data.lossTrades.length > 1}
-				<div>
-					{lossItem.index + 1} of {$app_data.lossTrades.length}
-				</div>
-			{/if}
+			<div class="col-span-2 w-14" class:opacity-0={$app_data.lossTrades.length < 1}>
+				{lossItem.index + 1} of {$app_data.lossTrades.length}
+			</div>
 
 			<button
 				class="rotate-180"
+				class:opacity-0={$app_data.lossTrades.length >= MAX_TRADES &&
+					$app_data.activeLosingTrade.index === MAX_TRADES - 1}
+				class:pointer-events-none={$app_data.lossTrades.length >= MAX_TRADES &&
+					$app_data.activeLosingTrade.index === MAX_TRADES - 1}
 				on:click={() => {
 					if ($app_data.lossTrades.length - 1 === $app_data.activeLosingTrade.index) {
 						addLosingTrade();
@@ -71,7 +75,7 @@
 					}
 				}}
 			>
-				{#if $app_data.lossTrades.length - 1 === $app_data.activeLosingTrade.index}
+				{#if $app_data.lossTrades.length - 1 === $app_data.activeLosingTrade.index && $app_data.lossTrades.length < MAX_TRADES}
 					<AddIcon />
 				{:else}
 					<BackIcon />

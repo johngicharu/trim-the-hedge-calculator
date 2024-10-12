@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { addProfitableTrade, deleteItem, type IProfitItem } from '$lib';
+	import { addProfitableTrade, deleteItem, MAX_TRADES, type IProfitItem } from '$lib';
 	import AddIcon from '$lib/icons/AddIcon.svelte';
 	import BackIcon from '$lib/icons/BackIcon.svelte';
 	import DeleteIcon from '$lib/icons/DeleteIcon.svelte';
@@ -24,39 +24,43 @@
 </script>
 
 <div class="section winning">
-	<div class="group_label">
+	<div class="pb-2 group_label">
 		<div class="text">Winning Trade</div>
-		<div class="flex items-center justify-center space-x-2 control_btns">
-			{#if profitItem.index >= 1}
-				<button
-					on:click={() => {
-						app_data.update((d) => {
-							const foundItem = d.profitTrades.find((item) => item.index === profitItem.index - 1);
+		<div class="grid grid-cols-5 grid-rows-1 control_btns">
+			<button
+				class:opacity-0={profitItem.index < 1}
+				class:pointer-events-none={profitItem.index < 1}
+				on:click={() => {
+					app_data.update((d) => {
+						const foundItem = d.profitTrades.find((item) => item.index === profitItem.index - 1);
 
-							if (foundItem) d.activeProfitableTrade = foundItem;
+						if (foundItem) d.activeProfitableTrade = foundItem;
 
-							return d;
-						});
-					}}
-				>
-					<BackIcon />
-				</button>
-			{/if}
+						return d;
+					});
+				}}
+			>
+				<BackIcon />
+			</button>
 
-			{#if $app_data.profitTrades.length > 1}
-				<button on:click={() => deleteItem(profitItem)}>
-					<DeleteIcon />
-				</button>
-			{/if}
+			<button
+				on:click={() => deleteItem(profitItem)}
+				class:opacity-0={$app_data.profitTrades.length < 1}
+				class:pointer-events-none={$app_data.profitTrades.length < 1}
+			>
+				<DeleteIcon />
+			</button>
 
-			{#if $app_data.profitTrades.length > 1}
-				<div>
-					{profitItem.index + 1} of {$app_data.profitTrades.length}
-				</div>
-			{/if}
+			<div class="col-span-2 w-14" class:opacity-0={$app_data.profitTrades.length < 1}>
+				{profitItem.index + 1} of {$app_data.profitTrades.length}
+			</div>
 
 			<button
 				class="rotate-180"
+				class:opacity-0={$app_data.profitTrades.length >= MAX_TRADES &&
+					$app_data.activeProfitableTrade.index === MAX_TRADES - 1}
+				class:pointer-events-none={$app_data.profitTrades.length >= MAX_TRADES &&
+					$app_data.activeProfitableTrade.index === MAX_TRADES - 1}
 				on:click={() => {
 					if ($app_data.profitTrades.length - 1 === $app_data.activeProfitableTrade.index) {
 						addProfitableTrade();
@@ -71,7 +75,7 @@
 					}
 				}}
 			>
-				{#if $app_data.profitTrades.length - 1 === $app_data.activeProfitableTrade.index}
+				{#if $app_data.profitTrades.length - 1 === $app_data.activeProfitableTrade.index && $app_data.profitTrades.length < MAX_TRADES}
 					<AddIcon />
 				{:else}
 					<BackIcon />

@@ -1,6 +1,8 @@
 import { get } from 'svelte/store';
 import { app_data } from './stores';
 
+export const MAX_TRADES = 10;
+
 // place files you want to import through the `$lib` alias in this folder.
 export type IProfitItem = {
 	keepPips: number;
@@ -32,6 +34,8 @@ export type IClosedResults = {
 };
 
 export async function addProfitableTrade() {
+	if (get(app_data).profitTrades.length >= MAX_TRADES) return;
+
 	console.log('Add Profitable Trade');
 	app_data.update((d) => {
 		const newItem = {
@@ -50,6 +54,8 @@ export async function addProfitableTrade() {
 }
 
 export async function addLosingTrade() {
+	if (get(app_data).lossTrades.length >= MAX_TRADES) return;
+
 	console.log('Add Losing Trade');
 
 	app_data.update((d) => {
