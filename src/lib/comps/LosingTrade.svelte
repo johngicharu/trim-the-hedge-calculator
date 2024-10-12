@@ -45,13 +45,13 @@
 
 			<button
 				on:click={() => deleteItem(lossItem)}
-				class:opacity-0={$app_data.lossTrades.length < 1}
-				class:pointer-events-none={$app_data.lossTrades.length < 1}
+				class:opacity-0={$app_data.lossTrades.length < 2}
+				class:pointer-events-none={$app_data.lossTrades.length < 2}
 			>
 				<DeleteIcon />
 			</button>
 
-			<div class="col-span-2 w-14" class:opacity-0={$app_data.lossTrades.length < 1}>
+			<div class="col-span-2 w-14" class:opacity-0={$app_data.lossTrades.length < 2}>
 				{lossItem.index + 1} of {$app_data.lossTrades.length}
 			</div>
 
