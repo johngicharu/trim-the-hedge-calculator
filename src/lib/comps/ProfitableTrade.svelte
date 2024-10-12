@@ -1,72 +1,87 @@
 <script lang="ts">
+	import { addProfitableTrade, isNumber, type IProfitItem } from '$lib';
+	import AddIcon from '$lib/icons/AddIcon.svelte';
+	import BackIcon from '$lib/icons/BackIcon.svelte';
 	import { app_data } from '$lib/stores';
-	import { onMount } from 'svelte';
 
-	export let profit_trade_index: number = 0;
+	let profitItem = $app_data.activeProfitableTrade;
 
-	let keep_pips: number;
-	let profit_amount: number;
-	$: volume_type = $app_data.volumeType;
-	let profit_volume: number;
+	$: ((_) => {
+		$app_data.profitTrades[profitItem.index] = profitItem;
+	})(profitItem);
 
-	onMount(() => {
-		if ($app_data.profitTrades[profit_trade_index]) {
-			keep_pips = $app_data.profitTrades[profit_trade_index].keepPips;
-			profit_amount = $app_data.profitTrades[profit_trade_index].profitAmount;
-			profit_volume = $app_data.profitTrades[profit_trade_index].profitVolume;
+	app_data.subscribe((apd) => {
+		if (apd.activeProfitableTrade.index !== profitItem.index) {
+			profitItem = apd.activeProfitableTrade;
 		}
-
-		return () => {
-			if ($app_data.profitTrades[profit_trade_index]) {
-				if (
-					$app_data.profitTrades[profit_trade_index].keepPips !== keep_pips ||
-					$app_data.profitTrades[profit_trade_index].profitAmount !== profit_amount ||
-					$app_data.profitTrades[profit_trade_index].profitVolume !== profit_volume
-				) {
-					$app_data.profitTrades[profit_trade_index] = {
-						keepPips: keep_pips,
-						profitAmount: profit_amount,
-						profitVolume: profit_volume
-					};
-				}
-			}
-		};
 	});
-
-	$: if (keep_pips >= 0 && profit_amount >= 0 && profit_volume > 0) {
-		if (
-			$app_data.profitTrades[profit_trade_index] &&
-			($app_data.profitTrades[profit_trade_index].keepPips !== keep_pips ||
-				$app_data.profitTrades[profit_trade_index].profitAmount !== profit_amount ||
-				$app_data.profitTrades[profit_trade_index].profitVolume !== profit_volume)
-		) {
-			$app_data.profitTrades[profit_trade_index] = {
-				keepPips: keep_pips,
-				profitAmount: profit_amount,
-				profitVolume: profit_volume
-			};
-		}
-	}
 </script>
 
 <div class="section winning">
 	<div class="group_label">
 		<div class="text">Winning Trade</div>
+		<div class="flex items-center justify-center space-x-2 control_btns">
+			{#if profitItem.index >= 1}
+				<button
+					on:click={() => {
+						app_data.update((d) => {
+							const foundItem = d.profitTrades.find((item) => item.index === profitItem.index - 1);
+
+							if (foundItem) d.activeProfitableTrade = foundItem;
+
+							return d;
+						});
+					}}
+				>
+					<BackIcon />
+				</button>
+			{/if}
+
+			{#if $app_data.profitTrades.length > 1}
+				<div>
+					{profitItem.index + 1} of {$app_data.profitTrades.length}
+				</div>
+			{/if}
+
+			<button
+				class="rotate-180"
+				on:click={() => {
+					if ($app_data.profitTrades.length - 1 === $app_data.activeProfitableTrade.index) {
+						addProfitableTrade();
+					} else {
+						app_data.update((d) => {
+							const foundItem = d.profitTrades.find((item) => item.index === profitItem.index + 1);
+
+							if (foundItem) d.activeProfitableTrade = foundItem;
+
+							return d;
+						});
+					}
+				}}
+			>
+				{#if $app_data.profitTrades.length - 1 === $app_data.activeProfitableTrade.index}
+					<AddIcon />
+				{:else}
+					<BackIcon />
+				{/if}
+			</button>
+		</div>
 	</div>
+
 	<div class="input_group">
 		<div class="input_wrapper">
 			<label for="keep_pips">Keep Pips</label>
-			<input type="number" name="keep_pips" id="keep_pips" bind:value={keep_pips} />
+			<input type="number" name="keep_pips" id="keep_pips" bind:value={profitItem.keepPips} />
 		</div>
 
 		<div class="input_wrapper">
 			<label for="profit">Profit</label>
-			<input type="number" name="profit" id="profit" bind:value={profit_amount} />
+			<input type="number" name="profit" id="profit" bind:value={profitItem.profitAmount} />
 		</div>
 
 		<div class="input_wrapper">
-			<label for="profit_volume">Volume ({volume_type.toLowerCase()})</label>
-			<input type="number" name="profit_volume" id="profit" bind:value={profit_volume} />
+			<label for="profit_volume">Volume ({$app_data.volumeType.toLowerCase()})</label>
+			<input type="number" name="profit_volume" id="profit" bind:value={profitItem.profitVolume} />
 		</div>
 	</div>
 </div>

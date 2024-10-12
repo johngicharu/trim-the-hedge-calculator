@@ -4,9 +4,9 @@
 
 	export let loss_trade_index: number = 0;
 
-	let loss_amount: number;
+	let loss_amount: number = 0;
 	$: volume_type = $app_data.volumeType;
-	let loss_volume: number;
+	let loss_volume: number = 0;
 
 	onMount(() => {
 		if ($app_data.lossTrades[loss_trade_index]) {

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+	import { addLosingTrade, addProfitableTrade } from '$lib';
 	import ClosingTrades from '$lib/comps/ClosingTrades.svelte';
 	import LosingTrade from '$lib/comps/LosingTrade.svelte';
 	import ProfitableTrade from '$lib/comps/ProfitableTrade.svelte';
@@ -29,7 +30,13 @@
 			if (!info) {
 				await saveAppData();
 			} else {
-				$app_data = info;
+				app_data.set(info);
+				if (!info?.profitTrades?.length) {
+					addProfitableTrade();
+				}
+				if (!info?.lossTrades?.length) {
+					addLosingTrade();
+				}
 			}
 		}
 	}
@@ -161,27 +168,9 @@
 			</div>
 		</div>
 
-		<!-- Profitable Trades -->
-		{#each $app_data.profitTrades.filter((_, i) => i !== $app_data.activeProfitableTradeIndex) as p, p_index}
-			<button>
-				{p_index + 1}
-			</button>
-		{/each}
+		<ProfitableTrade />
 
-		{#if $app_data.profitTrades.length && $app_data.profitTrades[$app_data.activeProfitableTradeIndex]}
-			<ProfitableTrade profit_trade_index={$app_data.activeProfitableTradeIndex} />
-		{/if}
-
-		<!-- Losing Trades -->
-		{#each $app_data.lossTrades.filter((_, i) => i !== $app_data.activeLosingTradeIndex) as p, p_index}
-			<button>
-				{p_index + 1}
-			</button>
-		{/each}
-
-		{#if $app_data.lossTrades.length && $app_data.lossTrades[$app_data.activeLosingTradeIndex]}
-			<LosingTrade loss_trade_index={$app_data.activeLosingTradeIndex} />
-		{/if}
+		<!-- <LosingTrade loss_trade_index={0} /> -->
 
 		<div class="py-4 summary_section text-slate-200 bg-slate-800 min-h-[220px]">
 			<div class="keep_amount">
