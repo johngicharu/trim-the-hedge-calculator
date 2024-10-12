@@ -5,7 +5,7 @@
 	import LosingTrade from '$lib/comps/LosingTrade.svelte';
 	import ProfitableTrade from '$lib/comps/ProfitableTrade.svelte';
 	import CopyIcon from '$lib/icons/CopyIcon.svelte';
-	import { app_data, closed_results } from '$lib/stores';
+	import { app_data, closed_results, reset_closed_results } from '$lib/stores';
 	import { onMount } from 'svelte';
 
 	function getBrowserInstance(): typeof chrome | null {
@@ -86,11 +86,12 @@
 				break;
 			}
 
-			was_edited = true;
+			losingTrades.shift();
+
 			if (tradeToTrim.lossAmount < remaining_amount) {
 				closedTrades.push({ ...tradeToTrim, closeVolume: tradeToTrim.lossVolume });
 				remaining_amount -= tradeToTrim.lossAmount;
-				losingTrades.shift();
+				was_edited = true;
 			} else {
 				// Trim this position only
 				const close_partial_lots =
@@ -99,11 +100,15 @@
 							(tradeToTrim.lossVolume / (data.volumeType === 'UNITS' ? 100000 : 1)) *
 							100
 					) / 100;
-				closedTrades.push({
-					...tradeToTrim,
-					closeVolume: close_partial_lots * (data.volumeType === 'UNITS' ? 100000 : 1)
-				});
-				remaining_amount -= remaining_amount;
+
+				if (close_partial_lots > 0) {
+					closedTrades.push({
+						...tradeToTrim,
+						closeVolume: close_partial_lots * (data.volumeType === 'UNITS' ? 100000 : 1)
+					});
+					remaining_amount -= remaining_amount;
+					was_edited = true;
+				}
 			}
 		}
 
@@ -125,6 +130,8 @@
 			};
 
 			closed_results.set(closedResults);
+		} else {
+			reset_closed_results();
 		}
 
 		saveAppData();
