@@ -169,8 +169,7 @@
 		</div>
 
 		<ProfitableTrade />
-
-		<!-- <LosingTrade loss_trade_index={0} /> -->
+		<LosingTrade />
 
 		<div class="py-4 summary_section text-slate-200 bg-slate-800 min-h-[220px]">
 			<div class="keep_amount">

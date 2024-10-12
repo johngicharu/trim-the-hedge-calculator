@@ -1,3 +1,4 @@
+import { get } from 'svelte/store';
 import { app_data } from './stores';
 
 // place files you want to import through the `$lib` alias in this folder.
@@ -49,20 +50,40 @@ export async function addProfitableTrade() {
 }
 
 export async function addLosingTrade() {
+	console.log('Add Losing Trade');
+
 	app_data.update((d) => {
-		d.lossTrades.push({
+		const newLoss = {
 			lossAmount: 0,
 			lossVolume: 0,
 			index: d.lossTrades.length
-		});
+		};
+
+		d.lossTrades.push(newLoss);
 
 		return {
 			...d,
-			activeLosingTrade: {
-				lossAmount: 0,
-				lossVolume: 0,
-				index: d.lossTrades.length
-			}
+			activeLosingTrade: newLoss
+		};
+	});
+}
+
+export function deleteItem(item: IProfitItem | ILossItem) {
+	const fieldName: 'profitTrades' | 'lossTrades' =
+		'lossAmount' in item ? 'lossTrades' : 'profitTrades';
+	const typeName: 'activeLosingTrade' | 'activeProfitableTrade' =
+		'lossAmount' in item ? 'activeLosingTrade' : 'activeProfitableTrade';
+	const newIndex = item.index === 0 ? 0 : item.index - 1;
+
+	app_data.update((data) => {
+		const fixedItems = data[fieldName]
+			.filter((tr) => tr.index !== item.index)
+			.map((tr, index) => ({ ...tr, index }));
+
+		return {
+			...data,
+			[fieldName]: fixedItems,
+			[typeName]: fixedItems[newIndex]
 		};
 	});
 }

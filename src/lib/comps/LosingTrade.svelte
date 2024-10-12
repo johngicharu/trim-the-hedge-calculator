@@ -1,59 +1,93 @@
 <script lang="ts">
 	import { app_data } from '$lib/stores';
-	import { onMount } from 'svelte';
+	import { addLosingTrade, deleteItem, type ILossItem } from '$lib';
+	import AddIcon from '$lib/icons/AddIcon.svelte';
+	import BackIcon from '$lib/icons/BackIcon.svelte';
+	import DeleteIcon from '$lib/icons/DeleteIcon.svelte';
 
-	export let loss_trade_index: number = 0;
+	let lossItem: ILossItem = $app_data.activeLosingTrade;
 
-	let loss_amount: number = 0;
-	$: volume_type = $app_data.volumeType;
-	let loss_volume: number = 0;
+	$: ((_) => {
+		$app_data.lossTrades[lossItem.index] = lossItem;
+	})(lossItem);
 
-	onMount(() => {
-		if ($app_data.lossTrades[loss_trade_index]) {
-			loss_amount = $app_data.lossTrades[loss_trade_index].lossAmount;
-			loss_volume = $app_data.lossTrades[loss_trade_index].lossVolume;
-		}
-
-		return () => {
-			if ($app_data.lossTrades[loss_trade_index]) {
-				if (
-					$app_data.lossTrades[loss_trade_index].lossAmount !== loss_amount ||
-					$app_data.lossTrades[loss_trade_index].lossVolume !== loss_volume
-				) {
-					$app_data.lossTrades[loss_trade_index] = {
-						lossAmount: Math.abs(loss_amount),
-						lossVolume: loss_volume
-					};
-				}
-			}
-		};
-	});
-
-	$: if (!Object.is(Math.abs(loss_amount), NaN) && loss_volume > 0) {
+	app_data.subscribe((apd) => {
 		if (
-			$app_data.lossTrades[loss_trade_index] &&
-			($app_data.lossTrades[loss_trade_index].lossAmount !== loss_amount ||
-				$app_data.lossTrades[loss_trade_index].lossVolume !== loss_volume)
+			apd.activeLosingTrade.index !== lossItem.index ||
+			apd.activeLosingTrade.lossAmount !== lossItem.lossAmount ||
+			apd.activeLosingTrade.lossVolume !== lossItem.lossVolume
 		) {
-			$app_data.lossTrades[loss_trade_index] = {
-				lossAmount: Math.abs(loss_amount),
-				lossVolume: loss_volume
-			};
+			lossItem = apd.activeLosingTrade;
 		}
-	}
+	});
 </script>
 
 <div class="section losing">
-	<div class="group_label">Losing Trade</div>
+	<div class="group_label">
+		<div class="text">Losing Trade</div>
+
+		<div class="flex items-center justify-center space-x-2 control_btns">
+			{#if lossItem.index >= 1}
+				<button
+					on:click={() => {
+						app_data.update((d) => {
+							const foundItem = d.lossTrades.find((item) => item.index === lossItem.index - 1);
+
+							if (foundItem) d.activeLosingTrade = foundItem;
+
+							return d;
+						});
+					}}
+				>
+					<BackIcon />
+				</button>
+			{/if}
+
+			{#if $app_data.lossTrades.length > 1}
+				<button on:click={() => deleteItem(lossItem)}>
+					<DeleteIcon />
+				</button>
+			{/if}
+
+			{#if $app_data.lossTrades.length > 1}
+				<div>
+					{lossItem.index + 1} of {$app_data.lossTrades.length}
+				</div>
+			{/if}
+
+			<button
+				class="rotate-180"
+				on:click={() => {
+					if ($app_data.lossTrades.length - 1 === $app_data.activeLosingTrade.index) {
+						addLosingTrade();
+					} else {
+						app_data.update((d) => {
+							const foundItem = d.lossTrades.find((item) => item.index === lossItem.index + 1);
+
+							if (foundItem) d.activeLosingTrade = foundItem;
+
+							return d;
+						});
+					}
+				}}
+			>
+				{#if $app_data.lossTrades.length - 1 === $app_data.activeLosingTrade.index}
+					<AddIcon />
+				{:else}
+					<BackIcon />
+				{/if}
+			</button>
+		</div>
+	</div>
 	<div class="input_group">
 		<div class="input_wrapper">
 			<label for="loss">Loss</label>
-			<input type="number" name="loss" id="loss" bind:value={loss_amount} />
+			<input type="number" name="loss" id="loss" bind:value={lossItem.lossAmount} />
 		</div>
 
 		<div class="input_wrapper">
-			<label for="loss_volume">Volume ({volume_type.toLowerCase()})</label>
-			<input type="number" name="loss_volume" id="loss_volume" bind:value={loss_volume} />
+			<label for="loss_volume">Volume ({$app_data.volumeType.toLowerCase()})</label>
+			<input type="number" name="loss_volume" id="loss_volume" bind:value={lossItem.lossVolume} />
 		</div>
 	</div>
 </div>
@@ -64,7 +98,7 @@
 	}
 
 	.group_label {
-		@apply font-semibold text-sm pt-2;
+		@apply font-semibold text-sm pt-2 flex items-center justify-between w-full;
 	}
 
 	.section.losing {

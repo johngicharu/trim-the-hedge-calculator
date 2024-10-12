@@ -1,17 +1,23 @@
 <script lang="ts">
-	import { addProfitableTrade, isNumber, type IProfitItem } from '$lib';
+	import { addProfitableTrade, deleteItem, type IProfitItem } from '$lib';
 	import AddIcon from '$lib/icons/AddIcon.svelte';
 	import BackIcon from '$lib/icons/BackIcon.svelte';
+	import DeleteIcon from '$lib/icons/DeleteIcon.svelte';
 	import { app_data } from '$lib/stores';
 
-	let profitItem = $app_data.activeProfitableTrade;
+	let profitItem: IProfitItem = $app_data.activeProfitableTrade;
 
 	$: ((_) => {
 		$app_data.profitTrades[profitItem.index] = profitItem;
 	})(profitItem);
 
 	app_data.subscribe((apd) => {
-		if (apd.activeProfitableTrade.index !== profitItem.index) {
+		if (
+			apd.activeProfitableTrade.index !== profitItem.index ||
+			apd.activeProfitableTrade.keepPips !== profitItem.keepPips ||
+			apd.activeProfitableTrade.profitAmount !== profitItem.profitAmount ||
+			apd.activeProfitableTrade.profitVolume !== profitItem.profitVolume
+		) {
 			profitItem = apd.activeProfitableTrade;
 		}
 	});
@@ -34,6 +40,12 @@
 					}}
 				>
 					<BackIcon />
+				</button>
+			{/if}
+
+			{#if $app_data.profitTrades.length > 1}
+				<button on:click={() => deleteItem(profitItem)}>
+					<DeleteIcon />
 				</button>
 			{/if}
 
