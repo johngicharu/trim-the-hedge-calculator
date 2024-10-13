@@ -161,7 +161,9 @@
 				Trim The Hedge Calculator {$app_data.mode}
 			</div>
 			<div class="text-xs tagline">
-				made with love <a class="text-cyan-300" href="http://gicharu.com">@gicharu</a>
+				made with love <a class="text-cyan-300" target="_blank" href="http://gicharu.com"
+					>@gicharu</a
+				>
 			</div>
 		</h1>
 	</header>

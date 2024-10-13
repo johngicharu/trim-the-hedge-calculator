@@ -4,21 +4,28 @@
 	import BackIcon from '$lib/icons/BackIcon.svelte';
 	import DeleteIcon from '$lib/icons/DeleteIcon.svelte';
 	import { app_data } from '$lib/stores';
+	import { writable } from 'svelte/store';
 
-	let profitItem: IProfitItem = $app_data.activeProfitableTrade;
+	const profitItem = writable<IProfitItem>($app_data.activeProfitableTrade);
 
-	$: ((_) => {
-		$app_data.profitTrades[profitItem.index] = profitItem;
-	})(profitItem);
+	profitItem.subscribe((profitItem) => {
+		app_data.update((apd) => {
+			apd.profitTrades[profitItem.index] = profitItem;
+
+			return {
+				...apd,
+				activeProfitableTrade: profitItem
+			};
+		});
+	});
 
 	app_data.subscribe((apd) => {
 		if (
-			apd.activeProfitableTrade.index !== profitItem.index ||
-			apd.activeProfitableTrade.keep !== profitItem.keep ||
-			apd.activeProfitableTrade.profitAmount !== profitItem.profitAmount ||
-			apd.activeProfitableTrade.profitVolume !== profitItem.profitVolume
+			(Object.keys($profitItem) as (keyof IProfitItem)[]).some(
+				(key) => apd.activeProfitableTrade[key] !== $profitItem[key]
+			)
 		) {
-			profitItem = apd.activeProfitableTrade;
+			$profitItem = apd.activeProfitableTrade;
 		}
 	});
 </script>
@@ -28,11 +35,11 @@
 		<div class="text">Winning Trade</div>
 		<div class="grid grid-cols-5 grid-rows-1 control_btns">
 			<button
-				class:opacity-0={profitItem.index < 1}
-				class:pointer-events-none={profitItem.index < 1}
+				class:opacity-0={$profitItem.index < 1}
+				class:pointer-events-none={$profitItem.index < 1}
 				on:click={() => {
 					app_data.update((d) => {
-						const foundItem = d.profitTrades.find((item) => item.index === profitItem.index - 1);
+						const foundItem = d.profitTrades.find((item) => item.index === $profitItem.index - 1);
 
 						if (foundItem) d.activeProfitableTrade = foundItem;
 
@@ -44,7 +51,7 @@
 			</button>
 
 			<button
-				on:click={() => deleteItem(profitItem)}
+				on:click={() => deleteItem($profitItem)}
 				class:opacity-0={$app_data.profitTrades.length < 2}
 				class:pointer-events-none={$app_data.profitTrades.length < 2}
 			>
@@ -52,7 +59,7 @@
 			</button>
 
 			<div class="col-span-2 w-14" class:opacity-0={$app_data.profitTrades.length < 2}>
-				{profitItem.index + 1} of {$app_data.profitTrades.length}
+				{$profitItem.index + 1} of {$app_data.profitTrades.length}
 			</div>
 
 			<button
@@ -66,7 +73,7 @@
 						addProfitableTrade();
 					} else {
 						app_data.update((d) => {
-							const foundItem = d.profitTrades.find((item) => item.index === profitItem.index + 1);
+							const foundItem = d.profitTrades.find((item) => item.index === $profitItem.index + 1);
 
 							if (foundItem) d.activeProfitableTrade = foundItem;
 
@@ -87,17 +94,17 @@
 	<div class="input_group">
 		<div class="input_wrapper">
 			<label for="keep_value">Keep ({$app_data.mode === 'MONEY' ? '$' : 'Pips'})</label>
-			<input type="number" name="keep_value" id="keep_value" bind:value={profitItem.keep} />
+			<input type="number" name="keep_value" id="keep_value" bind:value={$profitItem.keep} />
 		</div>
 
 		<div class="input_wrapper">
 			<label for="profit">Profit ({$app_data.mode === 'MONEY' ? '$' : 'Pips'})</label>
-			<input type="number" name="profit" id="profit" bind:value={profitItem.profitAmount} />
+			<input type="number" name="profit" id="profit" bind:value={$profitItem.profitAmount} />
 		</div>
 
 		<div class="input_wrapper">
 			<label for="profit_volume">Volume ({$app_data.volumeType.toLowerCase()})</label>
-			<input type="number" name="profit_volume" id="profit" bind:value={profitItem.profitVolume} />
+			<input type="number" name="profit_volume" id="profit" bind:value={$profitItem.profitVolume} />
 		</div>
 	</div>
 </div>

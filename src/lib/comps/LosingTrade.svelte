@@ -4,20 +4,27 @@
 	import AddIcon from '$lib/icons/AddIcon.svelte';
 	import BackIcon from '$lib/icons/BackIcon.svelte';
 	import DeleteIcon from '$lib/icons/DeleteIcon.svelte';
+	import { writable } from 'svelte/store';
+	const lossItem = writable<ILossItem>($app_data.activeLosingTrade);
 
-	let lossItem: ILossItem = $app_data.activeLosingTrade;
+	lossItem.subscribe((lossItem) => {
+		app_data.update((apd) => {
+			apd.lossTrades[lossItem.index] = lossItem;
 
-	$: ((_) => {
-		$app_data.lossTrades[lossItem.index] = lossItem;
-	})(lossItem);
+			return {
+				...apd,
+				activeLosingTrade: lossItem
+			};
+		});
+	});
 
 	app_data.subscribe((apd) => {
 		if (
-			apd.activeLosingTrade.index !== lossItem.index ||
-			apd.activeLosingTrade.lossAmount !== lossItem.lossAmount ||
-			apd.activeLosingTrade.lossVolume !== lossItem.lossVolume
+			(Object.keys($lossItem) as (keyof ILossItem)[]).some(
+				(key) => apd.activeLosingTrade[key] !== $lossItem[key]
+			)
 		) {
-			lossItem = apd.activeLosingTrade;
+			$lossItem = apd.activeLosingTrade;
 		}
 	});
 </script>
@@ -28,11 +35,11 @@
 
 		<div class="grid grid-cols-5 grid-rows-1 control_btns">
 			<button
-				class:opacity-0={lossItem.index < 1}
-				class:pointer-events-none={lossItem.index < 1}
+				class:opacity-0={$lossItem.index < 1}
+				class:pointer-events-none={$lossItem.index < 1}
 				on:click={() => {
 					app_data.update((d) => {
-						const foundItem = d.lossTrades.find((item) => item.index === lossItem.index - 1);
+						const foundItem = d.lossTrades.find((item) => item.index === $lossItem.index - 1);
 
 						if (foundItem) d.activeLosingTrade = foundItem;
 
@@ -44,7 +51,7 @@
 			</button>
 
 			<button
-				on:click={() => deleteItem(lossItem)}
+				on:click={() => deleteItem($lossItem)}
 				class:opacity-0={$app_data.lossTrades.length < 2}
 				class:pointer-events-none={$app_data.lossTrades.length < 2}
 			>
@@ -52,7 +59,7 @@
 			</button>
 
 			<div class="col-span-2 w-14" class:opacity-0={$app_data.lossTrades.length < 2}>
-				{lossItem.index + 1} of {$app_data.lossTrades.length}
+				{$lossItem.index + 1} of {$app_data.lossTrades.length}
 			</div>
 
 			<button
@@ -66,7 +73,7 @@
 						addLosingTrade();
 					} else {
 						app_data.update((d) => {
-							const foundItem = d.lossTrades.find((item) => item.index === lossItem.index + 1);
+							const foundItem = d.lossTrades.find((item) => item.index === $lossItem.index + 1);
 
 							if (foundItem) d.activeLosingTrade = foundItem;
 
@@ -86,12 +93,12 @@
 	<div class="input_group">
 		<div class="input_wrapper">
 			<label for="loss">Loss ({$app_data.mode === 'MONEY' ? '$' : 'Pips'})</label>
-			<input type="number" name="loss" id="loss" bind:value={lossItem.lossAmount} />
+			<input type="number" name="loss" id="loss" bind:value={$lossItem.lossAmount} />
 		</div>
 
 		<div class="input_wrapper">
 			<label for="loss_volume">Volume ({$app_data.volumeType.toLowerCase()})</label>
-			<input type="number" name="loss_volume" id="loss_volume" bind:value={lossItem.lossVolume} />
+			<input type="number" name="loss_volume" id="loss_volume" bind:value={$lossItem.lossVolume} />
 		</div>
 	</div>
 </div>
