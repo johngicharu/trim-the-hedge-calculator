@@ -1,12 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import {
-		addLosingTrade,
-		addProfitableTrade,
-		isNumber,
-		type IAppData,
-		type IClosedResults
-	} from '$lib';
+	import { addLosingTrade, addProfitableTrade, type IAppData, type IClosedResults } from '$lib';
 	import ClosingTrades from '$lib/comps/ClosingTrades.svelte';
 	import LosingTrade from '$lib/comps/LosingTrade.svelte';
 	import ProfitableTrade from '$lib/comps/ProfitableTrade.svelte';
@@ -70,21 +64,25 @@
 			Then we pop an item from the end until we are either, done with the profit being distributed or done with the losses to be closed or, the profit could not close the current loss trade
 			Push the results to a new array of trades to close
 		*/
-
 		let totalProfit = 0;
 		let totalKeepProfit = 0;
 		let totalApplyProfit = 0;
 
 		for (let i = 0; i < data.profitTrades.length; i++) {
-			if (data.profitTrades[i].profitAmount > 0 && data.profitTrades[i].profitVolume > 0) {
+			const profitTrade = data.profitTrades[i];
+			profitTrade.keep = profitTrade.keep || 0;
+			profitTrade.profitAmount = profitTrade.profitAmount || 0;
+			profitTrade.profitVolume = profitTrade.profitVolume || 0;
+
+			if (profitTrade.profitAmount > 0 && profitTrade.profitVolume > 0) {
 				totalProfit +=
 					data.mode === 'MONEY'
-						? data.profitTrades[i].profitAmount
-						: data.profitTrades[i].profitAmount * data.profitTrades[i].profitVolume;
+						? profitTrade.profitAmount
+						: profitTrade.profitAmount * profitTrade.profitVolume;
 				totalKeepProfit +=
 					data.mode === 'MONEY'
-						? data.profitTrades[i].keep || 0
-						: (data.profitTrades[i].keep || 0) * data.profitTrades[i].profitVolume;
+						? profitTrade.keep || 0
+						: (profitTrade.keep || 0) * profitTrade.profitVolume;
 			}
 		}
 
@@ -97,6 +95,9 @@
 
 		for (let i = 0; i < data.lossTrades.length; i++) {
 			const lossTrade = data.lossTrades[i];
+			lossTrade.lossVolume = lossTrade.lossVolume || 0;
+			lossTrade.lossAmount = lossTrade.lossAmount || 0;
+
 			lossTrade.lossVolume = Math.abs(lossTrade.lossVolume);
 			lossTrade.lossAmount = Math.abs(lossTrade.lossAmount);
 

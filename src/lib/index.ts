@@ -5,15 +5,15 @@ export const MAX_TRADES = 10;
 
 // place files you want to import through the `$lib` alias in this folder.
 export type IProfitItem = {
-	keep: number;
-	profitAmount: number;
-	profitVolume: number;
+	keep: number | null;
+	profitAmount: number | null;
+	profitVolume: number | null;
 	index: number;
 };
 
 export type ILossItem = {
-	lossAmount: number;
-	lossVolume: number;
+	lossAmount: number | null;
+	lossVolume: number | null;
 	index: number;
 };
 
@@ -36,12 +36,11 @@ export type IClosedResults = {
 export async function addProfitableTrade() {
 	if (get(app_data).profitTrades.length >= MAX_TRADES) return;
 
-	console.log('Add Profitable Trade');
 	app_data.update((d) => {
 		const newItem = {
 			keep: d.profitTrades[d.profitTrades.length - 1]?.keep || 10,
-			profitAmount: 0,
-			profitVolume: 0,
+			profitAmount: null,
+			profitVolume: null,
 			index: d.profitTrades.length
 		};
 		d.profitTrades.push(newItem);
@@ -56,12 +55,10 @@ export async function addProfitableTrade() {
 export async function addLosingTrade() {
 	if (get(app_data).lossTrades.length >= MAX_TRADES) return;
 
-	console.log('Add Losing Trade');
-
 	app_data.update((d) => {
 		const newLoss = {
-			lossAmount: 0,
-			lossVolume: 0,
+			lossAmount: null,
+			lossVolume: null,
 			index: d.lossTrades.length
 		};
 

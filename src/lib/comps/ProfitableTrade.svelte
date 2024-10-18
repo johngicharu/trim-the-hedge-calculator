@@ -5,10 +5,12 @@
 	import DeleteIcon from '$lib/icons/DeleteIcon.svelte';
 	import { app_data } from '$lib/stores';
 	import { writable } from 'svelte/store';
+	import FormattedNumber from './FormattedNumber.svelte';
 
 	const profitItem = writable<IProfitItem>($app_data.activeProfitableTrade);
 
 	profitItem.subscribe((profitItem) => {
+		console.log(profitItem);
 		app_data.update((apd) => {
 			apd.profitTrades[profitItem.index] = profitItem;
 
@@ -94,17 +96,35 @@
 	<div class="input_group">
 		<div class="input_wrapper">
 			<label for="keep_value">Keep ({$app_data.mode === 'MONEY' ? '$' : 'Pips'})</label>
-			<input type="number" name="keep_value" id="keep_value" bind:value={$profitItem.keep} />
+			<FormattedNumber
+				name="keep"
+				id="keep"
+				defaultValue={$profitItem.keep}
+				on:update={(e) => ($profitItem.keep = e.detail)}
+				maxDecimals={2}
+			/>
 		</div>
 
 		<div class="input_wrapper">
 			<label for="profit">Profit ({$app_data.mode === 'MONEY' ? '$' : 'Pips'})</label>
-			<input type="number" name="profit" id="profit" bind:value={$profitItem.profitAmount} />
+			<FormattedNumber
+				name="profitAmount"
+				id="profitAmount"
+				defaultValue={$profitItem.profitAmount}
+				on:update={(e) => ($profitItem.profitAmount = e.detail)}
+				maxDecimals={2}
+			/>
 		</div>
 
 		<div class="input_wrapper">
 			<label for="profit_volume">Volume ({$app_data.volumeType.toLowerCase()})</label>
-			<input type="number" name="profit_volume" id="profit" bind:value={$profitItem.profitVolume} />
+			<FormattedNumber
+				name="profitVolume"
+				id="profitVolume"
+				defaultValue={$profitItem.profitVolume}
+				on:update={(e) => ($profitItem.profitVolume = e.detail)}
+				maxDecimals={$app_data.volumeType === 'UNITS' ? 0 : 2}
+			/>
 		</div>
 	</div>
 </div>

@@ -5,6 +5,8 @@
 	import BackIcon from '$lib/icons/BackIcon.svelte';
 	import DeleteIcon from '$lib/icons/DeleteIcon.svelte';
 	import { writable } from 'svelte/store';
+	import FormattedNumber from './FormattedNumber.svelte';
+
 	const lossItem = writable<ILossItem>($app_data.activeLosingTrade);
 
 	lossItem.subscribe((lossItem) => {
@@ -93,12 +95,24 @@
 	<div class="input_group">
 		<div class="input_wrapper">
 			<label for="loss">Loss ({$app_data.mode === 'MONEY' ? '$' : 'Pips'})</label>
-			<input type="number" name="loss" id="loss" bind:value={$lossItem.lossAmount} />
+			<FormattedNumber
+				name="lossAmount"
+				id="lossAmount"
+				defaultValue={$lossItem.lossAmount}
+				on:update={(e) => ($lossItem.lossAmount = e.detail)}
+				maxDecimals={2}
+			/>
 		</div>
 
 		<div class="input_wrapper">
 			<label for="loss_volume">Volume ({$app_data.volumeType.toLowerCase()})</label>
-			<input type="number" name="loss_volume" id="loss_volume" bind:value={$lossItem.lossVolume} />
+			<FormattedNumber
+				name="lossVolume"
+				id="lossVolume"
+				defaultValue={$lossItem.lossVolume}
+				on:update={(e) => ($lossItem.lossVolume = e.detail)}
+				maxDecimals={$app_data.volumeType === 'UNITS' ? 0 : 2}
+			/>
 		</div>
 	</div>
 </div>
