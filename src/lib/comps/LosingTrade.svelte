@@ -1,121 +1,119 @@
 <script lang="ts">
 	import { app_data } from '$lib/stores';
-	import { addLosingTrade, deleteItem, MAX_TRADES, type ILossItem } from '$lib';
+	import { addLosingTrade, deleteItem, MAX_TRADES } from '$lib';
 	import AddIcon from '$lib/icons/AddIcon.svelte';
 	import BackIcon from '$lib/icons/BackIcon.svelte';
 	import DeleteIcon from '$lib/icons/DeleteIcon.svelte';
-	import { writable } from 'svelte/store';
 	import FormattedNumber from './FormattedNumber.svelte';
-
-	const lossItem = writable<ILossItem>($app_data.activeLosingTrade);
-
-	lossItem.subscribe((lossItem) => {
-		app_data.update((apd) => {
-			apd.lossTrades[lossItem.index] = lossItem;
-
-			return {
-				...apd,
-				activeLosingTrade: lossItem
-			};
-		});
-	});
-
-	app_data.subscribe((apd) => {
-		if (
-			(Object.keys($lossItem) as (keyof ILossItem)[]).some(
-				(key) => apd.activeLosingTrade[key] !== $lossItem[key]
-			)
-		) {
-			$lossItem = apd.activeLosingTrade;
-		}
-	});
 </script>
 
-<div class="section losing">
-	<div class="pb-2 group_label">
-		<div class="text">Losing Trade</div>
+{#key $app_data.activeLosingTrade.index}
+	<div class="section losing">
+		<div class="pb-2 group_label">
+			<div class="text">Losing Trade</div>
 
-		<div class="grid grid-cols-5 grid-rows-1 control_btns">
-			<button
-				class:opacity-0={$lossItem.index < 1}
-				class:pointer-events-none={$lossItem.index < 1}
-				on:click={() => {
-					app_data.update((d) => {
-						const foundItem = d.lossTrades.find((item) => item.index === $lossItem.index - 1);
-
-						if (foundItem) d.activeLosingTrade = foundItem;
-
-						return d;
-					});
-				}}
-			>
-				<BackIcon />
-			</button>
-
-			<button
-				on:click={() => deleteItem($lossItem)}
-				class:opacity-0={$app_data.lossTrades.length < 2}
-				class:pointer-events-none={$app_data.lossTrades.length < 2}
-			>
-				<DeleteIcon />
-			</button>
-
-			<div class="col-span-2 w-14" class:opacity-0={$app_data.lossTrades.length < 2}>
-				{$lossItem.index + 1} of {$app_data.lossTrades.length}
-			</div>
-
-			<button
-				class="rotate-180"
-				class:opacity-0={$app_data.lossTrades.length >= MAX_TRADES &&
-					$app_data.activeLosingTrade.index === MAX_TRADES - 1}
-				class:pointer-events-none={$app_data.lossTrades.length >= MAX_TRADES &&
-					$app_data.activeLosingTrade.index === MAX_TRADES - 1}
-				on:click={() => {
-					if ($app_data.lossTrades.length - 1 === $app_data.activeLosingTrade.index) {
-						addLosingTrade();
-					} else {
+			<div class="grid grid-cols-5 grid-rows-1 control_btns">
+				<button
+					class:opacity-0={$app_data.activeLosingTrade.index < 1}
+					class:pointer-events-none={$app_data.activeLosingTrade.index < 1}
+					on:click={() => {
 						app_data.update((d) => {
-							const foundItem = d.lossTrades.find((item) => item.index === $lossItem.index + 1);
+							const foundItem = d.lossTrades.find(
+								(item) => item.index === $app_data.activeLosingTrade.index - 1
+							);
 
 							if (foundItem) d.activeLosingTrade = foundItem;
 
 							return d;
 						});
-					}
-				}}
-			>
-				{#if $app_data.lossTrades.length - 1 === $app_data.activeLosingTrade.index && $app_data.lossTrades.length < MAX_TRADES}
-					<AddIcon />
-				{:else}
+					}}
+				>
 					<BackIcon />
-				{/if}
-			</button>
-		</div>
-	</div>
-	<div class="input_group">
-		<div class="input_wrapper">
-			<label for="loss">Loss ({$app_data.mode === 'MONEY' ? '$' : 'Pips'})</label>
-			<FormattedNumber
-				name="lossAmount"
-				id="lossAmount"
-				defaultValue={$lossItem.lossAmount}
-				on:update={(e) => ($lossItem.lossAmount = e.detail)}
-				maxDecimals={2}
-			/>
-		</div>
+				</button>
 
-		<div class="input_wrapper">
-			<label for="loss_volume">Volume ({$app_data.volumeType.toLowerCase()})</label>
-			<FormattedNumber
-				name="lossVolume"
-				id="lossVolume"
-				defaultValue={$lossItem.lossVolume}
-				on:update={(e) => ($lossItem.lossVolume = e.detail)}
-				maxDecimals={$app_data.volumeType === 'UNITS' ? 0 : 2}
-			/>
+				<button
+					on:click={() => deleteItem($app_data.activeLosingTrade)}
+					class:opacity-0={$app_data.lossTrades.length < 2}
+					class:pointer-events-none={$app_data.lossTrades.length < 2}
+				>
+					<DeleteIcon />
+				</button>
+
+				<div class="col-span-2 w-14" class:opacity-0={$app_data.lossTrades.length < 2}>
+					{$app_data.activeLosingTrade.index + 1} of {$app_data.lossTrades.length}
+				</div>
+
+				<button
+					class="rotate-180"
+					class:opacity-0={$app_data.lossTrades.length >= MAX_TRADES &&
+						$app_data.activeLosingTrade.index === MAX_TRADES - 1}
+					class:pointer-events-none={$app_data.lossTrades.length >= MAX_TRADES &&
+						$app_data.activeLosingTrade.index === MAX_TRADES - 1}
+					on:click={() => {
+						if ($app_data.lossTrades.length - 1 === $app_data.activeLosingTrade.index) {
+							addLosingTrade();
+						} else {
+							app_data.update((d) => {
+								const foundItem = d.lossTrades.find(
+									(item) => item.index === $app_data.activeLosingTrade.index + 1
+								);
+
+								if (foundItem) d.activeLosingTrade = foundItem;
+
+								return d;
+							});
+						}
+					}}
+				>
+					{#if $app_data.lossTrades.length - 1 === $app_data.activeLosingTrade.index && $app_data.lossTrades.length < MAX_TRADES}
+						<AddIcon />
+					{:else}
+						<BackIcon />
+					{/if}
+				</button>
+			</div>
+		</div>
+		<div class="input_group">
+			<div class="input_wrapper">
+				<label for="loss">Loss ({$app_data.mode === 'MONEY' ? '$' : 'Pips'})</label>
+
+				<FormattedNumber
+					name="lossAmount"
+					id="lossAmount"
+					defaultValue={$app_data.activeLosingTrade.lossAmount}
+					on:update={(e) => {
+						app_data.update((data) => {
+							data.activeLosingTrade.lossAmount = e.detail;
+							data.lossTrades[data.activeLosingTrade.index] = data.activeLosingTrade;
+
+							return data;
+						});
+					}}
+					maxDecimals={2}
+				/>
+			</div>
+
+			<div class="input_wrapper">
+				<label for="loss_volume">Volume ({$app_data.volumeType.toLowerCase()})</label>
+
+				<FormattedNumber
+					name="lossVolume"
+					id="lossVolume"
+					defaultValue={$app_data.activeLosingTrade.lossVolume}
+					on:update={(e) => {
+						app_data.update((data) => {
+							data.activeLosingTrade.lossVolume = e.detail;
+							data.lossTrades[data.activeLosingTrade.index] = data.activeLosingTrade;
+
+							return data;
+						});
+					}}
+					maxDecimals={$app_data.volumeType === 'UNITS' ? 0 : 2}
+				/>
+			</div>
 		</div>
 	</div>
-</div>
+{/key}
 
 <style lang="postcss">
 	.section {
@@ -139,11 +137,6 @@
 
 		label {
 			@apply font-semibold pb-1;
-		}
-
-		input {
-			@apply px-3 border py-1 w-full;
-			@apply w-full h-9 border-slate-300;
 		}
 	}
 </style>

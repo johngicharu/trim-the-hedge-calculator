@@ -38,17 +38,16 @@ export async function addProfitableTrade() {
 
 	app_data.update((d) => {
 		const newItem = {
-			keep: d.profitTrades[d.profitTrades.length - 1]?.keep || 10,
+			keep: d.activeProfitableTrade?.keep || 10,
 			profitAmount: null,
 			profitVolume: null,
 			index: d.profitTrades.length
 		};
-		d.profitTrades.push(newItem);
 
-		return {
-			...d,
-			activeProfitableTrade: newItem
-		};
+		d.profitTrades.push(newItem);
+		d.activeProfitableTrade = newItem;
+
+		return d;
 	});
 }
 
@@ -63,11 +62,9 @@ export async function addLosingTrade() {
 		};
 
 		d.lossTrades.push(newLoss);
+		d.activeLosingTrade = newLoss;
 
-		return {
-			...d,
-			activeLosingTrade: newLoss
-		};
+		return d;
 	});
 }
 
