@@ -269,44 +269,42 @@
 			</div>
 
 			<div class="py-4 summary_section text-slate-200 bg-slate-800 min-h-[200px]">
-				{#if $app_data.mode === 'MONEY'}
-					<div class="keep_amount">
-						<div class="font-semibold">Keep ({$app_data.mode === 'MONEY' ? '$' : 'Pips'}):</div>
-						<div class="content">
-							<button
-								on:click={() =>
-									navigator.clipboard.writeText(
-										(+($closed_results.keepAmount || 0).toFixed(2)).toString()
-									)}
-							>
-								<div>
-									{+($closed_results.keepAmount || 0).toFixed(2)}
-								</div>
-								<div>
-									<CopyIcon />
-								</div>
-							</button>
-						</div>
+				<div class="keep_amount">
+					<div class="font-semibold">Keep ({$app_data.mode === 'MONEY' ? '$' : 'Pips'}):</div>
+					<div class="content">
+						<button
+							on:click={() =>
+								navigator.clipboard.writeText(
+									(+($closed_results.keepAmount || 0).toFixed(2)).toString()
+								)}
+						>
+							<div>
+								{+($closed_results.keepAmount || 0).toFixed(2)}
+							</div>
+							<div>
+								<CopyIcon />
+							</div>
+						</button>
 					</div>
-					<div class="keep_amount">
-						<div class="font-semibold">Apply ({$app_data.mode === 'MONEY' ? '$' : 'Pips'}):</div>
-						<div class="content">
-							<button
-								on:click={() =>
-									navigator.clipboard.writeText(
-										(+($closed_results.applyAmount || 0).toFixed(2)).toString()
-									)}
-							>
-								<div>
-									{+($closed_results.applyAmount || 0).toFixed(2)}
-								</div>
-								<div>
-									<CopyIcon />
-								</div>
-							</button>
-						</div>
+				</div>
+				<div class="keep_amount">
+					<div class="font-semibold">Apply ({$app_data.mode === 'MONEY' ? '$' : 'Pips'}):</div>
+					<div class="content">
+						<button
+							on:click={() =>
+								navigator.clipboard.writeText(
+									(+($closed_results.applyAmount || 0).toFixed(2)).toString()
+								)}
+						>
+							<div>
+								{+($closed_results.applyAmount || 0).toFixed(2)}
+							</div>
+							<div>
+								<CopyIcon />
+							</div>
+						</button>
 					</div>
-				{/if}
+				</div>
 
 				<div class="close_partial">
 					<div class="font-semibold">Close Percentage:</div>
