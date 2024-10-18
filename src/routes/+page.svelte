@@ -5,7 +5,7 @@
 	import LosingTrade from '$lib/comps/LosingTrade.svelte';
 	import ProfitableTrade from '$lib/comps/ProfitableTrade.svelte';
 	import CopyIcon from '$lib/icons/CopyIcon.svelte';
-	import { app_data, closed_results, reset_closed_results } from '$lib/stores';
+	import { app_data, closed_results, defaultAppData } from '$lib/stores';
 	import { onMount } from 'svelte';
 
 	function getBrowserInstance(): typeof chrome | null {
@@ -13,6 +13,9 @@
 		const browserInstance = browser && (window.chrome || (window as any)['browser']);
 		return browserInstance || null;
 	}
+
+	let cached_data: IAppData;
+	$: cached_data;
 
 	async function saveAppData(data: IAppData) {
 		const instance = getBrowserInstance();
@@ -23,7 +26,7 @@
 					trim_the_hedge_calculator_data: data
 				}));
 		} catch (error) {
-			console.error(error);
+			// console.error(error);
 		}
 	}
 
@@ -31,18 +34,25 @@
 		const instance = getBrowserInstance();
 
 		if (instance) {
-			const info = (await instance.storage.local.get())?.trim_the_hedge_calculator_data;
+			try {
+				const info = (await instance.storage.local.get())?.trim_the_hedge_calculator_data;
 
-			if (info) {
-				app_data.set(info);
+				if (info) {
+					app_data.set(info);
+					cached_data = info;
 
-				if (!info?.profitTrades?.length) {
-					addProfitableTrade();
+					if (!info?.profitTrades?.length) {
+						addProfitableTrade();
+					}
+					if (!info?.lossTrades?.length) {
+						addLosingTrade();
+					}
 				}
-				if (!info?.lossTrades?.length) {
-					addLosingTrade();
-				}
+			} catch (err: any) {
+				app_data.set(defaultAppData);
 			}
+		} else {
+			app_data.set(defaultAppData);
 		}
 	}
 
@@ -55,6 +65,7 @@
 	});
 
 	app_data.subscribe((data) => {
+		if (!data) return;
 		/**
 			Calculate the total profit
 			Always calculate in pips for the close volume
@@ -181,110 +192,113 @@
 	});
 </script>
 
-<main class="w-full h-full bg-slate-50">
-	<header
-		class="flex flex-col items-center justify-center w-full px-3 py-3 space-y-2 text-slate-200 bg-slate-800"
-	>
-		<div class="logo">
-			<img src="ssfx.jpg" alt="SSFx" class="w-8 h-8 rounded-full" />
-		</div>
-		<h1 class="flex flex-col items-center justify-center h-full whitespace-nowrap">
-			<div class="text-2xl font-semibold heading_text">
-				Trim The Hedge Calculator {$app_data.mode}
+{#if $app_data}
+	<main class="w-full h-full bg-slate-50">
+		<header
+			class="flex flex-col items-center justify-center w-full px-3 py-3 space-y-2 text-slate-200 bg-slate-800"
+		>
+			<div class="logo">
+				<img src="ssfx.jpg" alt="SSFx" class="w-8 h-8 rounded-full" />
 			</div>
-			<div class="text-xs tagline">
-				made with love <a class="text-cyan-300" target="_blank" href="http://gicharu.com"
-					>@gicharu</a
-				>
-			</div>
-		</h1>
-	</header>
-
-	<section
-		class="w-full calculator h-[488px] max-h-[488px]"
-		data-simplebar
-		data-simplebar-auto-hide={false}
-	>
-		<div class="section">
-			<div class="input_group">
-				<div class="input_wrapper">
-					<label for="mode">Mode</label>
-					<select name="mode" id="mode" bind:value={$app_data.mode}>
-						<option value="MONEY">MONEY</option>
-						<option value="PIPS">PIPS</option>
-					</select>
+			<h1 class="flex flex-col items-center justify-center h-full whitespace-nowrap">
+				<div class="text-2xl font-semibold heading_text">
+					Trim The Hedge Calculator {$app_data.mode}
 				</div>
-
-				<div class="input_wrapper">
-					<label for="volume">Volume Type</label>
-					<select name="volume" id="volume" bind:value={$app_data.volumeType}>
-						<option value="LOTS">LOTS</option>
-						<option value="UNITS">UNITS</option>
-					</select>
+				<div class="text-xs tagline">
+					made with love <a class="text-cyan-300" target="_blank" href="http://gicharu.com"
+						>@gicharu</a
+					>
+					{cached_data?.activeProfitableTrade?.profitAmount || ''}
 				</div>
-			</div>
-		</div>
+			</h1>
+		</header>
 
-		<ProfitableTrade />
-		<LosingTrade />
+		<section
+			class="w-full calculator h-[488px] max-h-[488px]"
+			data-simplebar
+			data-simplebar-auto-hide={false}
+		>
+			<div class="section">
+				<div class="input_group">
+					<div class="input_wrapper">
+						<label for="mode">Mode</label>
+						<select name="mode" id="mode" bind:value={$app_data.mode}>
+							<option value="MONEY">MONEY</option>
+							<option value="PIPS">PIPS</option>
+						</select>
+					</div>
 
-		<div class="py-4 summary_section text-slate-200 bg-slate-800 min-h-[200px]">
-			{#if $app_data.mode === 'MONEY'}
-				<div class="keep_amount">
-					<div class="font-semibold">Keep ({$app_data.mode === 'MONEY' ? '$' : 'Pips'}):</div>
-					<div class="content">
-						<button
-							on:click={() =>
-								navigator.clipboard.writeText(
-									(+($closed_results.keepAmount || 0).toFixed(2)).toString()
-								)}
-						>
-							<div>
-								{+($closed_results.keepAmount || 0).toFixed(2)}
-							</div>
-							<div>
-								<CopyIcon />
-							</div>
-						</button>
+					<div class="input_wrapper">
+						<label for="volume">Volume Type</label>
+						<select name="volume" id="volume" bind:value={$app_data.volumeType}>
+							<option value="LOTS">LOTS</option>
+							<option value="UNITS">UNITS</option>
+						</select>
 					</div>
 				</div>
-				<div class="keep_amount">
-					<div class="font-semibold">Apply ({$app_data.mode === 'MONEY' ? '$' : 'Pips'}):</div>
-					<div class="content">
-						<button
-							on:click={() =>
-								navigator.clipboard.writeText(
-									(+($closed_results.applyAmount || 0).toFixed(2)).toString()
-								)}
-						>
-							<div>
-								{+($closed_results.applyAmount || 0).toFixed(2)}
-							</div>
-							<div>
-								<CopyIcon />
-							</div>
-						</button>
-					</div>
-				</div>
-			{/if}
+			</div>
 
-			<div class="close_partial">
-				<div class="font-semibold">Close Percentage:</div>
-				<div class="content">
-					<button>
-						<div>
-							{+($closed_results.closePercentage * 100).toFixed(2)}%
+			<ProfitableTrade />
+			<LosingTrade />
+
+			<div class="py-4 summary_section text-slate-200 bg-slate-800 min-h-[200px]">
+				{#if $app_data.mode === 'MONEY'}
+					<div class="keep_amount">
+						<div class="font-semibold">Keep ({$app_data.mode === 'MONEY' ? '$' : 'Pips'}):</div>
+						<div class="content">
+							<button
+								on:click={() =>
+									navigator.clipboard.writeText(
+										(+($closed_results.keepAmount || 0).toFixed(2)).toString()
+									)}
+							>
+								<div>
+									{+($closed_results.keepAmount || 0).toFixed(2)}
+								</div>
+								<div>
+									<CopyIcon />
+								</div>
+							</button>
 						</div>
-					</button>
-				</div>
-			</div>
+					</div>
+					<div class="keep_amount">
+						<div class="font-semibold">Apply ({$app_data.mode === 'MONEY' ? '$' : 'Pips'}):</div>
+						<div class="content">
+							<button
+								on:click={() =>
+									navigator.clipboard.writeText(
+										(+($closed_results.applyAmount || 0).toFixed(2)).toString()
+									)}
+							>
+								<div>
+									{+($closed_results.applyAmount || 0).toFixed(2)}
+								</div>
+								<div>
+									<CopyIcon />
+								</div>
+							</button>
+						</div>
+					</div>
+				{/if}
 
-			<!-- Close Summary -->
-			<ClosingTrades trade_to_close={$closed_results.losingTradesToClose} />
-			<div class="w-full h-5 spacer"></div>
-		</div>
-	</section>
-</main>
+				<div class="close_partial">
+					<div class="font-semibold">Close Percentage:</div>
+					<div class="content">
+						<button>
+							<div>
+								{+($closed_results.closePercentage * 100).toFixed(2)}%
+							</div>
+						</button>
+					</div>
+				</div>
+
+				<!-- Close Summary -->
+				<ClosingTrades trade_to_close={$closed_results.losingTradesToClose} />
+				<div class="w-full h-5 spacer"></div>
+			</div>
+		</section>
+	</main>
+{/if}
 
 <style lang="postcss">
 	.calculator {

@@ -1,14 +1,16 @@
 import { type IClosedResults, type IAppData } from '$lib';
 import { writable } from 'svelte/store';
 
-export const app_data = writable<IAppData>({
+export const app_data = writable<IAppData>();
+
+export const defaultAppData = {
 	mode: 'MONEY',
 	volumeType: 'LOTS',
 	activeProfitableTrade: { profitAmount: null, keep: null, profitVolume: null, index: 0 },
 	activeLosingTrade: { lossAmount: null, lossVolume: null, index: 0 },
 	lossTrades: [{ lossAmount: null, lossVolume: null, index: 0 }],
 	profitTrades: [{ profitAmount: null, keep: null, profitVolume: null, index: 0 }]
-});
+};
 
 const defaultClosedResults = {
 	applyAmount: 0,
