@@ -4,17 +4,48 @@
 	const dispatch = createEventDispatcher();
 
 	export let defaultValue: number | null | undefined;
-	export let maxDecimals = 30;
+	export let maxDecimals = 0;
 
 	let internalValue: string = (defaultValue || '').toString();
 
 	const format = (node: HTMLInputElement, formatFunction: (value: string) => string) => {
 		function updateValue(e: Event) {
+			// If all the values are zeros
+			if (
+				node.value
+					.replace(',', '')
+					.split('')
+					.every((a) => a === '0')
+			) {
+				node.value = node.value.replace(',', '');
+				return;
+			}
+
 			node.value = formatFunction(node.value);
+		}
+
+		function handleKeyUpAndDownEvents(e: KeyboardEvent) {
+			if (e.code === 'ArrowUp') {
+				node.value = formatFunction(
+					(
+						(parseFloat(node.value.replace(',', '') || '0') ?? 0) +
+						1 / Math.pow(10, maxDecimals)
+					).toString()
+				);
+			}
+			if (e.code === 'ArrowDown') {
+				node.value = formatFunction(
+					(
+						(parseFloat(node.value.replace(',', '') || '0') ?? 0) -
+						1 / Math.pow(10, maxDecimals)
+					).toString()
+				);
+			}
 		}
 
 		node.addEventListener('input', updateValue);
 		node.addEventListener('paste', updateValue);
+		node.addEventListener('keydown', handleKeyUpAndDownEvents);
 
 		// Format on intial hydration
 		node.value = formatFunction(node.value);
@@ -82,7 +113,7 @@
 <input
 	use:format={formattedNumber}
 	bind:value={internalValue}
-	class="px-3 border py-1 w-full h-9 border-slate-300"
+	class="w-full px-3 py-1 border h-9 border-slate-300"
 	type="text"
 	{...$$props}
 	on:input={changeFunc}
