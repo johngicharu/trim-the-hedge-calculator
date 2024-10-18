@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "Trim The Hedge Calculator",
-	"version": "0.2.1",
+	"version": "0.2.2",
 	"description": "Calculate the volume to close from losing trades to reduce one's overall losses when in a hedged position in forex",
 	"action": {
 		"default_title": "Trim the Hedge Calculator",
