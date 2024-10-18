@@ -1,12 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import {
-		addLosingTrade,
-		addProfitableTrade,
-		isNumber,
-		type IAppData,
-		type IClosedResults
-	} from '$lib';
+	import { addLosingTrade, addProfitableTrade, isNumber, type IAppData } from '$lib';
 	import ClosingTrades from '$lib/comps/ClosingTrades.svelte';
 	import LosingTrade from '$lib/comps/LosingTrade.svelte';
 	import ProfitableTrade from '$lib/comps/ProfitableTrade.svelte';
@@ -71,6 +65,7 @@
 			Push the results to a new array of trades to close
 		*/
 
+		// TODO => Make sure the profitTrades list only has correctly formatted trades
 		let totalProfit = 0;
 		let totalKeepProfit = 0;
 		let totalApplyProfit = 0;
@@ -91,9 +86,9 @@
 		totalApplyProfit = totalProfit - totalKeepProfit;
 
 		// Go through the losing trades
+		// TODO => Make sure the losing trades array only has valid or correctly formatted losing trades;
 		let totalLoss = 0;
-		let totalLossVolume = 0;
-		const lossTrades: { pips: number; volume: number; value: number }[] = [];
+		let lossTrades: { pips: number; volume: number; value: number }[] = [];
 
 		for (let i = 0; i < data.lossTrades.length; i++) {
 			const lossTrade = data.lossTrades[i];
@@ -105,7 +100,6 @@
 					data.mode === 'MONEY'
 						? lossTrade.lossAmount
 						: lossTrade.lossAmount * lossTrade.lossVolume;
-				totalLossVolume += lossTrade.lossVolume;
 				lossTrades.push({
 					volume: lossTrade.lossVolume,
 					pips:
@@ -120,61 +114,100 @@
 			}
 		}
 
-		// Sort the lossTrades list
-		if (lossTrades.length > 1) lossTrades.sort((a, b) => a.pips - b.pips);
+		// Sort the lossTradesList
+		lossTrades = lossTrades.sort();
 
-		const closedResults: IClosedResults = {
-			keepAmount: totalKeepProfit,
-			applyAmount: totalApplyProfit,
-			closePercentage: 0,
-			losingTradesToClose: []
-		};
-		let totalCloseTradesVolume = 0;
-		let totalProfitUsedToCloseTrades = 0;
+		/*const amount_to_keep = data.profitTrades
+			.filter((t) => t.keep >= 0 && t.profitAmount >= 0 && t.profitVolume >= 0)
+			.map(
+				(t) =>
+					(t.profitVolume / (data.volumeType === 'UNITS' ? 100000 : 1)) *
+					(data.mode === 'MONEY' ? data.pipValue : 1) *
+					t.keep
+			)
+			.reduce((a, b) => a + b);
 
-		function trimTrade(
-			trade: { pips: number; volume: number; value: number },
-			profitValue: number
-		) {
-			let closeVolume = Math.floor((profitValue / trade.value) * trade.volume * 100) / 100;
+		const total_profit = data.profitTrades
+			.filter((t) => t.keep >= 0 && t.profitAmount >= 0 && t.profitVolume >= 0)
+			.map((t) => (data.mode === 'MONEY' ? t.profitAmount : t.profitAmount * t.profitVolume))
+			.reduce((a, b) => a + b);
 
-			if (closeVolume > trade.volume) {
-				closeVolume = trade.volume;
-			}
+		let remaining_amount = total_profit - amount_to_keep; // Can be pips or pips * volume
 
-			return { closeVolume, applyProfitUsed: closeVolume * trade.pips };
-		}
+		const losingTrades = data.lossTrades
+			.filter((t) => isNumber(t.lossAmount) && isNumber(t.lossVolume))
+			.map((t) => ({
+				...t,
+				lossAmount: Math.abs(data.mode === 'MONEY' ? t.lossAmount : t.lossAmount * t.lossVolume),
+				lossVolume: Math.abs(t.lossVolume)
+			}))
+			.sort((a, b) => b.lossAmount - a.lossAmount);
 
-		while (lossTrades.length && totalApplyProfit > 0) {
-			// TODO -> remember to check if the current trimmed volume is 0 or less than 0
-			const tradeToTrim = lossTrades[lossTrades.length - 1];
-			const { applyProfitUsed, closeVolume } = trimTrade(tradeToTrim, totalApplyProfit);
+		const closedTrades: { lossAmount: number; lossVolume: number; closeVolume: number }[] = [];
 
-			if (closeVolume < (data.volumeType === 'UNITS' ? 1 : 0.01)) {
-				// Found a trade that cannot be trimmed
+		let was_edited = false;
+
+		while (remaining_amount > 0) {
+			// Close an additional losing trade
+			// Check each trade and close them based on whether they can be fully closed or not, we can first implement a one trade policy though where we only close one trade of the traders' chosing
+			const tradeToTrim = losingTrades[0];
+
+			if (!tradeToTrim || !isNumber(tradeToTrim.lossAmount) || !isNumber(tradeToTrim.lossVolume)) {
 				break;
 			}
 
-			lossTrades.pop();
-			closedResults.losingTradesToClose.push({
-				closeVolume: closeVolume,
-				lossVolume: tradeToTrim.volume,
-				lossAmount: data.mode === 'MONEY' ? tradeToTrim.value : tradeToTrim.pips
-			});
-			totalCloseTradesVolume += closeVolume;
-			totalProfitUsedToCloseTrades += applyProfitUsed;
-			totalApplyProfit = totalProfit - (totalKeepProfit + totalProfitUsedToCloseTrades);
+			losingTrades.shift();
+
+			if (tradeToTrim.lossAmount < remaining_amount) {
+				closedTrades.push({ ...tradeToTrim, closeVolume: tradeToTrim.lossVolume });
+				remaining_amount -= tradeToTrim.lossAmount;
+				was_edited = true;
+			} else {
+				// Trim this position only
+				const close_partial_lots =
+					Math.floor(
+						(remaining_amount / Math.abs(tradeToTrim.lossAmount)) *
+							(tradeToTrim.lossVolume / (data.volumeType === 'UNITS' ? 100000 : 1)) *
+							100
+					) / 100;
+
+				if (close_partial_lots > 0) {
+					closedTrades.push({
+						...tradeToTrim,
+						closeVolume: close_partial_lots * (data.volumeType === 'UNITS' ? 100000 : 1)
+					});
+					remaining_amount -= remaining_amount;
+					was_edited = true;
+				}
+			}
 		}
 
-		closedResults.keepAmount = totalProfit - totalProfitUsedToCloseTrades;
-		closedResults.applyAmount = totalProfitUsedToCloseTrades;
-		closedResults.closePercentage = totalCloseTradesVolume / totalLossVolume;
+		if (was_edited) {
+			const closedResults = {
+				applyAmount: total_profit - amount_to_keep,
+				closePercentage:
+					closedTrades.length && data.lossTrades.length
+						? closedTrades.map((t) => t.closeVolume).reduce((a, b) => a + b) /
+							data.lossTrades
+								.filter(
+									(t) => isNumber(t.lossAmount) && isNumber(t.lossVolume) && t.lossVolume >= 0
+								)
+								.map((t) => t.lossVolume)
+								.reduce((a, b) => a + b)
+						: 0,
+				keepAmount: amount_to_keep,
+				losingTradesToClose:
+					data.mode === 'MONEY'
+						? closedTrades
+						: closedTrades.map((t) => ({ ...t, lossAmount: t.lossAmount / t.lossVolume }))
+			};
 
-		if (closedResults.losingTradesToClose.length) {
 			closed_results.set(closedResults);
+		} else {
+			reset_closed_results();
 		}
 
-		saveAppData(data);
+		saveAppData(data);*/
 	});
 </script>
 

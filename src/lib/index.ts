@@ -18,7 +18,6 @@ export type ILossItem = {
 };
 
 export type IAppData = {
-	pipValue: number;
 	volumeType: 'UNITS' | 'LOTS';
 	mode: 'MONEY' | 'PIPS';
 	activeProfitableTrade: IProfitItem;
