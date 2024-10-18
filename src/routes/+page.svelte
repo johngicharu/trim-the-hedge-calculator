@@ -136,7 +136,9 @@
 			trade: { pips: number; volume: number; value: number },
 			profitValue: number
 		) {
-			let closeVolume = Math.floor((profitValue / trade.value) * trade.volume * 100) / 100;
+			const roundFactor = data.volumeType === 'UNITS' ? 1 : 100;
+			let closeVolume =
+				Math.floor((profitValue / trade.value) * trade.volume * roundFactor) / roundFactor;
 
 			if (closeVolume > trade.volume) {
 				closeVolume = trade.volume;
