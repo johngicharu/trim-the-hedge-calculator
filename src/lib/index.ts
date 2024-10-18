@@ -3,18 +3,41 @@ import { app_data } from './stores';
 
 export const MAX_TRADES = 10;
 
+export const defaultAppData = () => {
+	const resetTime = Date.now();
+
+	return {
+		mode: 'MONEY',
+		volumeType: 'LOTS',
+		activeProfitableTrade: {
+			profitAmount: null,
+			keep: null,
+			profitVolume: null,
+			index: 0,
+			resetTimestamp: resetTime
+		},
+		activeLosingTrade: { lossAmount: null, lossVolume: null, index: 0, resetTimestamp: resetTime },
+		lossTrades: [{ lossAmount: null, lossVolume: null, index: 0, resetTimestamp: resetTime }],
+		profitTrades: [
+			{ profitAmount: null, keep: null, profitVolume: null, index: 0, resetTimestamp: resetTime }
+		]
+	} as IAppData;
+};
+
 // place files you want to import through the `$lib` alias in this folder.
 export type IProfitItem = {
 	keep: number | null;
 	profitAmount: number | null;
 	profitVolume: number | null;
 	index: number;
+	resetTimestamp: number;
 };
 
 export type ILossItem = {
 	lossAmount: number | null;
 	lossVolume: number | null;
 	index: number;
+	resetTimestamp: number;
 };
 
 export type IAppData = {
@@ -41,7 +64,8 @@ export async function addProfitableTrade() {
 			keep: d.activeProfitableTrade?.keep || 10,
 			profitAmount: null,
 			profitVolume: null,
-			index: d.profitTrades.length
+			index: d.profitTrades.length,
+			resetTimestamp: d.activeProfitableTrade.resetTimestamp
 		};
 
 		d.profitTrades.push(newItem);
@@ -58,7 +82,8 @@ export async function addLosingTrade() {
 		const newLoss = {
 			lossAmount: null,
 			lossVolume: null,
-			index: d.lossTrades.length
+			index: d.lossTrades.length,
+			resetTimestamp: d.activeLosingTrade.resetTimestamp
 		};
 
 		d.lossTrades.push(newLoss);
@@ -90,4 +115,22 @@ export function deleteItem(item: IProfitItem | ILossItem) {
 
 export function isNumber(val: any): boolean {
 	return typeof val === 'number' && !Object.is(Number(val), NaN);
+}
+
+export function resetDefaults(field: 'activeProfitableTrade' | 'activeLosingTrade' | 'all') {
+	app_data.update((data) => {
+		const defaultData = defaultAppData();
+
+		if (field === 'activeProfitableTrade') {
+			data.activeProfitableTrade = defaultData.activeProfitableTrade;
+			data.profitTrades = defaultData.profitTrades;
+		} else if (field === 'activeLosingTrade') {
+			data.activeLosingTrade = defaultData.activeLosingTrade;
+			data.lossTrades = defaultData.lossTrades;
+		} else if (field === 'all') {
+			data = defaultData;
+		}
+
+		return data;
+	});
 }

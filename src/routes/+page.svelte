@@ -1,11 +1,19 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
-	import { addLosingTrade, addProfitableTrade, type IAppData, type IClosedResults } from '$lib';
+	import {
+		addLosingTrade,
+		addProfitableTrade,
+		defaultAppData,
+		resetDefaults,
+		type IAppData,
+		type IClosedResults
+	} from '$lib';
 	import ClosingTrades from '$lib/comps/ClosingTrades.svelte';
 	import LosingTrade from '$lib/comps/LosingTrade.svelte';
 	import ProfitableTrade from '$lib/comps/ProfitableTrade.svelte';
 	import CopyIcon from '$lib/icons/CopyIcon.svelte';
-	import { app_data, closed_results, defaultAppData } from '$lib/stores';
+	import DeleteIcon from '$lib/icons/DeleteIcon.svelte';
+	import { app_data, closed_results, reset_closed_results } from '$lib/stores';
 	import { onMount } from 'svelte';
 
 	function getBrowserInstance(): typeof chrome | null {
@@ -13,9 +21,6 @@
 		const browserInstance = browser && (window.chrome || (window as any)['browser']);
 		return browserInstance || null;
 	}
-
-	let cached_data: IAppData;
-	$: cached_data;
 
 	async function saveAppData(data: IAppData) {
 		const instance = getBrowserInstance();
@@ -39,7 +44,6 @@
 
 				if (info) {
 					app_data.set(info);
-					cached_data = info;
 
 					if (!info?.profitTrades?.length) {
 						addProfitableTrade();
@@ -49,10 +53,10 @@
 					}
 				}
 			} catch (err: any) {
-				app_data.set(defaultAppData);
+				app_data.set(defaultAppData());
 			}
 		} else {
-			app_data.set(defaultAppData);
+			app_data.set(defaultAppData());
 		}
 	}
 
@@ -186,6 +190,8 @@
 
 		if (closedResults.losingTradesToClose.length) {
 			closed_results.set(closedResults);
+		} else {
+			reset_closed_results();
 		}
 
 		saveAppData(data);
@@ -201,14 +207,11 @@
 				<img src="ssfx.jpg" alt="SSFx" class="w-8 h-8 rounded-full" />
 			</div>
 			<h1 class="flex flex-col items-center justify-center h-full whitespace-nowrap">
-				<div class="text-2xl font-semibold heading_text">
-					Trim The Hedge Calculator {$app_data.mode}
-				</div>
+				<div class="text-2xl font-semibold heading_text">Trim The Hedge Calculator</div>
 				<div class="text-xs tagline">
 					made with love <a class="text-cyan-300" target="_blank" href="http://gicharu.com"
 						>@gicharu</a
 					>
-					{cached_data?.activeProfitableTrade?.profitAmount || ''}
 				</div>
 			</h1>
 		</header>
@@ -240,6 +243,30 @@
 
 			<ProfitableTrade />
 			<LosingTrade />
+
+			<div class="py-4 controls">
+				<button
+					class="text-white bg-sky-500"
+					on:click={() => {
+						resetDefaults('activeProfitableTrade');
+					}}
+					><DeleteIcon fill="white" width="16" height="16" /> <span class="pl-2"> Profits </span>
+				</button>
+				<button
+					class="text-white bg-fuchsia-600"
+					on:click={() => {
+						resetDefaults('activeLosingTrade');
+					}}
+					><DeleteIcon fill="white" width="16" height="16" /> <span class="pl-2"> Losses </span>
+				</button>
+				<button
+					class="text-white bg-orange-400"
+					on:click={() => {
+						resetDefaults('all');
+					}}
+					><DeleteIcon fill="white" width="16" height="16" /> <span class="pl-2"> All </span>
+				</button>
+			</div>
 
 			<div class="py-4 summary_section text-slate-200 bg-slate-800 min-h-[200px]">
 				{#if $app_data.mode === 'MONEY'}
@@ -338,6 +365,15 @@
 				button {
 					@apply flex items-center justify-end space-x-2;
 				}
+			}
+		}
+
+		.controls {
+			@apply flex items-center justify-evenly space-x-2 px-3;
+
+			button {
+				@apply w-full whitespace-nowrap flex items-center justify-center space-x-3;
+				@apply rounded py-2 text-sm px-2;
 			}
 		}
 	}

@@ -7,7 +7,7 @@
 	import FormattedNumber from './FormattedNumber.svelte';
 </script>
 
-{#key $app_data.activeLosingTrade.index}
+{#key `${$app_data.activeLosingTrade.index}_${$app_data.activeLosingTrade.resetTimestamp}}`}
 	<div class="section losing">
 		<div class="pb-2 group_label">
 			<div class="text">Losing Trade</div>

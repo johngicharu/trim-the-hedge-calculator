@@ -7,10 +7,10 @@
 	import FormattedNumber from './FormattedNumber.svelte';
 </script>
 
-{#key $app_data.activeProfitableTrade.index}
+{#key `${$app_data.activeProfitableTrade.index}_${$app_data.activeProfitableTrade.resetTimestamp}}`}
 	<div class="section winning">
 		<div class="pb-2 group_label">
-			<div class="text">Winning Trade</div>
+			<div class="text">Profitable Trade</div>
 			<div class="grid grid-cols-5 grid-rows-1 control_btns">
 				<button
 					class:opacity-0={$app_data.activeProfitableTrade.index < 1}
